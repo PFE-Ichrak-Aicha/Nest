@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Nom          String        @db.VarChar(80)
+  Prenom       String        @db.VarChar(80)
+  NumTel       Int           @db.Int()
+  Adresse      String
+  email        String        @unique @db.VarChar(80)
+  MotDePasse   String        @db.VarChar(80)
+  Ville        String
+  CodePostal   String?
+  publications Publication[] @relation("user_publications")
+}
+
+model Publication {
+  pubid            Int           @id @default(autoincrement())
+  marque           String        @db.VarChar(20)
+  model            String        @db.VarChar(30)
+  anneeFabrication Int           @db.Int()
+  nombrePlace      Int           @db.Int()
+  couleur          String        @db.VarChar(30)
+  kilometrage      Int           @db.Int()
+  prix             Float
+  descrption       String?       @db.VarChar(400)
+  typeCarburant    TypeCarburant
+  userId           Int // Foreign key referencing User
+  // Define the relation to User
+  user             User          @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+enum TypeCarburant {
+  Essence
+  Diesel
+  GPL
+  Electrique
+}
