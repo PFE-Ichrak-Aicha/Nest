@@ -19,6 +19,9 @@ export class UpdateAccountDto {
     email ?: string
     @IsNotEmpty()
     @IsOptional()
+    MotDePasse ? : string
+    @IsNotEmpty()
+    @IsOptional()
     Ville ?: string
     @IsOptional()
     CodePostal ?: string

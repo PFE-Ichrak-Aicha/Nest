@@ -7,9 +7,9 @@ import { ResetPasseConfirmationDto } from 'dto/resetPasseConfirmationDto';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { request } from 'http';
-import {Request } from "express"
-import { DeleteAccountDto } from 'dto/deleteAccountDto';
-import { UpdateAccountDto } from 'dto/updateAccountDto';
+//import { Request } from "express"
+//import { DeleteAccountDto } from 'dto/deleteAccountDto';
+//import { UpdateAccountDto } from 'dto/updateAccountDto';
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) { }
@@ -29,19 +29,22 @@ export class AuthController {
     resetPasseConfirmation(@Body() resetPasseConfirmationDto: ResetPasseConfirmationDto) {
         return this.authService.resetPasseConfirmation(resetPasseConfirmationDto)
     }
-    @UseGuards(AuthGuard ("jwt"))
+
+    /*@UseGuards(AuthGuard ("jwt"))
     @Delete("delete-account")
     deleteAccount (@Req() request : Request , @Body() deleteAccountDto : DeleteAccountDto){
         const userId =  request.user ["id"]
-        return this.authService.deleteAccount(userId , deleteAccountDto );
-    }
-    @UseGuards(AuthGuard("jwt"))
-    @Put("update-account/:id")
-    update(@Param("id" , ParseIntPipe)
-    @Body() updateAccountDto : UpdateAccountDto, 
-    @Req() request: Request ) {
-        const userId = request.user["id"]
-        return this.authService.update( userId , updateAccountDto)
-    }
+        return this.authService.deleteAccount(userId , deleteAccountDto );}
+
+    */
+    /*
+     @UseGuards(AuthGuard("jwt"))
+     @Put("update-account/:id")
+     update(@Param("id" , ParseIntPipe)
+     @Body() updateAccountDto : UpdateAccountDto, 
+     @Req() request: Request ) {
+         const userId = request.user["id"]
+         return this.authService.update( userId , updateAccountDto)
+     }*/
 
 }

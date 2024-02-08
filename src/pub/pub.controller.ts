@@ -31,5 +31,6 @@ export class PubController {
         const userId = request.user["id"]
         return this.pubService.update(pubid, userId , updatePubDto)
     }
+    
 }
 

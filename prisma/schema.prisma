@@ -23,6 +23,7 @@ model User {
   MotDePasse   String        @db.VarChar(80)
   Ville        String
   CodePostal   String?
+  PhotoProfil  String?
   publications Publication[] @relation("user_publications")
 }
 

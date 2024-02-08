@@ -17,5 +17,6 @@ export class InscriptionDto {
     @IsNotEmpty()
     Ville: string
     CodePostal: string
+    PhotoProfil : string
 
 }

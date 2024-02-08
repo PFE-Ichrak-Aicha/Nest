@@ -9,8 +9,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ResetPasseDemandDto } from 'dto/resetPassDemandDto';
 import { ResetPasseConfirmationDto } from 'dto/resetPasseConfirmationDto';
-import { DeleteAccountDto } from 'dto/deleteAccountDto';
-import { UpdateAccountDto } from 'dto/updateAccountDto';
+//import { DeleteAccountDto } from 'dto/deleteAccountDto';
+
 
 @Injectable()
 export class AuthService {
@@ -21,7 +21,7 @@ export class AuthService {
         private readonly JwtService: JwtService,
         private readonly configService: ConfigService) { }
     async inscription(inscriptionDto: InscriptionDto) {
-        const { Nom, Prenom, NumTel, Adresse, Ville, email, MotDePasse, CodePostal } = inscriptionDto
+        const { Nom, Prenom, NumTel, Adresse, Ville, email, MotDePasse, CodePostal, PhotoProfil } = inscriptionDto
         //**vérification de user : déja inscrit ou non */
         const user = await this.prismaService.user.findUnique({ where: { email } });
         if (user) throw new ConflictException('Utilisateur déja exist !');
@@ -38,6 +38,7 @@ export class AuthService {
                 email,
                 MotDePasse: hash,
                 CodePostal,
+                PhotoProfil: PhotoProfil ? PhotoProfil : null,
             },
         });
         //**Envoyer un email de confirmation */
@@ -97,6 +98,7 @@ export class AuthService {
         await this.prismaService.user.update({ where: { email }, data: { MotDePasse: hash } })
         return { data: "Mot De Passe updated " }
     }
+    /*
     async deleteAccount(userId: any, deleteAccountDto: DeleteAccountDto) {
         const { MotDePasse } = deleteAccountDto
         const user = await this.prismaService.user.findUnique({ where: { id: userId } })
@@ -105,15 +107,9 @@ export class AuthService {
         if (!match) throw new ForbiddenException("Mot De Passe Incorrect")
         await this.prismaService.user.delete({ where: { id: userId } });
         return { data: " User successfully deleted " }
-    }
-    async update(userId: number, updateAccountDto: UpdateAccountDto) {
-        const user = await this.prismaService.user.findUnique({ where: { id: userId } })
-        if (!user) throw new NotFoundException("User not found")
+    }*/
 
 
-        const updatedAccount = await this.prismaService.user.update({ where: { id: userId }, data: { ...updateAccountDto } })
-        return { data: "Account Updated successfully !" }
-    }
 
 
 
