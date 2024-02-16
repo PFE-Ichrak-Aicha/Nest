@@ -1,4 +1,4 @@
-import { Body, Controller, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Param, Res } from '@nestjs/common';
+import { Body, Controller, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Param, Res, ParseIntPipe } from '@nestjs/common';
 import { DeleteAccountDto } from 'dto/deleteAccountDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { UserService } from './user.service';
@@ -11,6 +11,7 @@ import { Request, request } from 'express'
 import { Observable, from, map, of } from 'rxjs';
 import * as multer from 'multer';
 import { User } from '@prisma/client';
+import { UserWithoutPassword } from './user.service';
 
 export const storage = {
     storage: multer.diskStorage({
@@ -28,7 +29,11 @@ export const storage = {
 export class UserController {
     uploadService: any;
     constructor(private readonly userService: UserService) { }
-
+    @UseGuards(AuthGuard("jwt"))
+    @Get(':id')
+    async getUsrById(@Param('id',ParseIntPipe) userId: number): Promise<UserWithoutPassword> {
+        return this.userService.getUserById(userId);
+    }
     @UseGuards(AuthGuard("jwt"))
     @Delete("delete-account")
     deleteAccount(@Req() request: Request, @Body() deleteAccountDto: DeleteAccountDto) {
@@ -65,6 +70,5 @@ export class UserController {
         const userId = request.user["id"]; 
         return from(this.userService.updateProfileImage(userId, file.filename));
     }
-
 
 }

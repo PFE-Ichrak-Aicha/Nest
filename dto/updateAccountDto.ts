@@ -3,29 +3,29 @@ import { IsEmail, IsNotEmpty, IsOptional } from "class-validator"
 export class UpdateAccountDto {
     @IsNotEmpty()
     @IsOptional()
-    Nom ?: string
+    Nom?: string
     @IsNotEmpty()
     @IsOptional()
-    Prenom ?: string
+    Prenom?: string
     @IsNotEmpty()
     @IsOptional()
-    NumTel ?: number
+    NumTel?: string
     @IsNotEmpty()
     @IsOptional()
-    Adresse ?: string
+    Adresse?: string
     @IsEmail()
     @IsOptional()
     @IsNotEmpty()
-    email ?: string
+    email?: string
     @IsNotEmpty()
     @IsOptional()
-    MotDePasse ? : string
+    MotDePasse?: string
     @IsNotEmpty()
     @IsOptional()
-    Ville ?: string
+    Ville?: string
     @IsOptional()
-    CodePostal ?: string
+    CodePostal?: string
     @IsOptional()
-    PhotoProfil ? : string
+    PhotoProfil?: string
 
 }

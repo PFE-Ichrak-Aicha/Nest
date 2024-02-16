@@ -42,6 +42,7 @@ model Publication {
   userId           Int // Foreign key referencing User
   // Define the relation to User
   user             User          @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  medias           Media[]       @relation("publication_medias")
 }
 
 enum TypeCarburant {
@@ -49,4 +50,14 @@ enum TypeCarburant {
   Diesel
   GPL
   Electrique
+}
+
+model Media {
+  mediaID     Int         @id @default(autoincrement())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  images      String
+  videos      String
+  pubId       Int
+  publication Publication @relation("publication_medias", fields: [pubId], references: [pubid], onUpdate: Cascade, onDelete: Cascade)
 }

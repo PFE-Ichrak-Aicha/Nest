@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -7,11 +7,25 @@ import { DeleteAccountDto } from 'dto/deleteAccountDto';
 import * as bcrypt from 'bcrypt';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { User } from '@prisma/client';
+import path from 'path';
+import * as fs from 'fs';
+export interface UserWithoutPassword extends Omit<User, 'MotDePasse'> {}
 @Injectable()
 export class UserService {
 
     constructor(private readonly prismaService: PrismaService,) { }
-
+    async getUserById(userId: number): Promise<UserWithoutPassword> {
+        const user = await this.prismaService.user.findUnique({
+            where: { id: userId },
+        });
+        if (!user) {
+            throw new NotFoundException('User not found');
+          }
+          // Exclure le champ MotDePasse de l'objet retourné
+          const { MotDePasse, ...userWithoutPassword } = user;
+          return userWithoutPassword;
+        
+    }
     async deleteAccount(userId: any, deleteAccountDto: DeleteAccountDto) {
         const { MotDePasse } = deleteAccountDto
         const user = await this.prismaService.user.findUnique({ where: { id: userId } })
@@ -63,5 +77,6 @@ export class UserService {
             throw new Error('Failed to update profile image');
         }
     }
+
 
 }

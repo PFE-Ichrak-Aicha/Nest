@@ -8,10 +8,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { PubModule } from './pub/pub.module';
 import { UserModule } from './user/user.module';
 import { MulterModule } from '@nestjs/platform-express';
+import { MediaModule } from './media/media.module';
 @Module({
   imports: [AuthModule, PrismaModule, ConfigModule.forRoot({ isGlobal: true }), MailerModule , PassportModule , JwtModule, PubModule, UserModule,
     MulterModule.register({
     dest: './upload',
-  }),]
+  }),
+    MediaModule,]
 })
 export class AppModule { }

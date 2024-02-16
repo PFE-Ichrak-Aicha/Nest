@@ -11,6 +11,7 @@ export class PubController {
     getAll() {
         return this.pubService.getAll()
     }
+    @UseGuards(AuthGuard('jwt')) 
     @Get(':pubid')
     async getPublicationById(@Param('pubid',ParseIntPipe) pubId: number) {
         return this.pubService.getPubById(pubId);
