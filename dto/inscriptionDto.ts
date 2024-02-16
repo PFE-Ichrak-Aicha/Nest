@@ -18,5 +18,7 @@ export class InscriptionDto {
     Ville: string
     CodePostal: string
     PhotoProfil : string
+    @IsNotEmpty()
+    MotDePasseConfirmation: string;
 
 }

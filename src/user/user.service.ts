@@ -21,12 +21,12 @@ export class UserService {
         await this.prismaService.user.delete({ where: { id: userId } });
         return { data: " User successfully deleted " }
     }
-    async updateAccount(userId: any, updateAccountDto: UpdateAccountDto) {
+    async updateAccount(userId: number, updateAccountDto: UpdateAccountDto) {
         const user = await this.prismaService.user.findUnique({ where: { id: userId } })
         if (!user) throw new NotFoundException('User not found')
         let updateAccount: User
         if (updateAccountDto.MotDePasse) {
-            const hash = await bcrypt.hash(updateAccountDto.MotDePasse,10);
+            const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
             updateAccount = await this.prismaService.user.update({
                 where: { id: userId },
                 data: { ...updateAccountDto, MotDePasse: hash },
@@ -39,7 +39,29 @@ export class UserService {
                 data: { ...updateAccountDto },
             });
         }
-        return { message: 'Compte utilisateur mis à jour avec succès.'  };
-    
+        return { message: 'Compte utilisateur mis à jour avec succès.' };
+
     }
+    async updateProfileImage(userId: number, filename: string): Promise<Object> {
+        // Recherche de l'utilisateur dans la base de données
+        const user = await this.prismaService.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            // Gérer le cas où l'utilisateur n'est pas trouvé
+            throw new NotFoundException('User not found');
+        }
+
+        try {
+            // Mettre à jour la colonne PhotoProfil de l'utilisateur avec le nom du fichier
+            const updatedUser = await this.prismaService.user.update({
+                where: { id: userId },
+                data: { PhotoProfil: filename },
+            });
+
+            return { message: 'Profile image updated successfully' };
+        } catch (error) {
+            // Gérer les erreurs potentielles
+            throw new Error('Failed to update profile image');
+        }
+    }
+
 }

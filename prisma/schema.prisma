@@ -15,16 +15,17 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  Nom          String        @db.VarChar(80)
-  Prenom       String        @db.VarChar(80)
-  NumTel       Int           @db.Int()
-  Adresse      String
-  email        String        @unique @db.VarChar(80)
-  MotDePasse   String        @db.VarChar(80)
-  Ville        String
-  CodePostal   String?
-  PhotoProfil  String?
-  publications Publication[] @relation("user_publications")
+  Nom                    String        @db.VarChar(80)
+  Prenom                 String        @db.VarChar(80)
+  NumTel                 String        @db.VarChar(8)
+  Adresse                String
+  email                  String        @unique @db.VarChar(80)
+  MotDePasse             String        @db.VarChar(80)
+  Ville                  String
+  CodePostal             String?
+  PhotoProfil            String?
+  MotDePasseConfirmation String        @db.VarChar(80)
+  publications           Publication[] @relation("user_publications")
 }
 
 model Publication {

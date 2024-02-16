@@ -8,8 +8,12 @@ import { UpdatePubDto } from 'dto/updatePubDto';
 export class PubController {
     constructor(private readonly pubService: PubService) { }
     @Get()
-    getAll(){
+    getAll() {
         return this.pubService.getAll()
+    }
+    @Get(':pubid')
+    async getPublicationById(@Param('pubid',ParseIntPipe) pubId: number) {
+        return this.pubService.getPubById(pubId);
     }
     @UseGuards(AuthGuard("jwt"))
     @Post("create")
@@ -19,18 +23,18 @@ export class PubController {
     }
     @UseGuards(AuthGuard("jwt"))
     @Delete("delete/:id")
-    delete(@Param("id" , ParseIntPipe) pubid:  number , @Req() request: Request ) {
+    delete(@Param("id", ParseIntPipe) pubid: number, @Req() request: Request) {
         const userId = request.user["id"]
         return this.pubService.delete(pubid, userId)
     }
     @UseGuards(AuthGuard("jwt"))
     @Put("update/:id")
-    update(@Param("id" , ParseIntPipe) pubid:  number ,
-    @Body() updatePubDto : UpdatePubDto, 
-    @Req() request: Request ) {
+    update(@Param("id", ParseIntPipe) pubid: number,
+        @Body() updatePubDto: UpdatePubDto,
+        @Req() request: Request) {
         const userId = request.user["id"]
-        return this.pubService.update(pubid, userId , updatePubDto)
+        return this.pubService.update(pubid, userId, updatePubDto)
     }
-    
+
 }
 

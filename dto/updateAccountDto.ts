@@ -25,5 +25,7 @@ export class UpdateAccountDto {
     Ville ?: string
     @IsOptional()
     CodePostal ?: string
+    @IsOptional()
+    PhotoProfil ? : string
 
 }

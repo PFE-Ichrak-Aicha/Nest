@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InscriptionDto } from 'dto/inscriptionDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -10,8 +10,6 @@ import { ConfigService } from '@nestjs/config';
 import { ResetPasseDemandDto } from 'dto/resetPassDemandDto';
 import { ResetPasseConfirmationDto } from 'dto/resetPasseConfirmationDto';
 //import { DeleteAccountDto } from 'dto/deleteAccountDto';
-
-
 @Injectable()
 export class AuthService {
 
@@ -21,10 +19,13 @@ export class AuthService {
         private readonly JwtService: JwtService,
         private readonly configService: ConfigService) { }
     async inscription(inscriptionDto: InscriptionDto) {
-        const { Nom, Prenom, NumTel, Adresse, Ville, email, MotDePasse, CodePostal, PhotoProfil } = inscriptionDto
+      
+        const { Nom, Prenom, NumTel, Adresse, Ville, email, MotDePasse, CodePostal, PhotoProfil ,MotDePasseConfirmation } = inscriptionDto
         //**vérification de user : déja inscrit ou non */
         const user = await this.prismaService.user.findUnique({ where: { email } });
         if (user) throw new ConflictException('Utilisateur déja exist !');
+        //**vérification de mot de passe et de sa confirmation */
+  if (MotDePasse !== MotDePasseConfirmation) throw new BadRequestException('Les mots de passe ne correspondent pas');
         //** hasher mdp*/
         const salt = await bcrypt.genSalt();
         const hash = await bcrypt.hash(inscriptionDto.MotDePasse, salt);
@@ -108,12 +109,4 @@ export class AuthService {
         await this.prismaService.user.delete({ where: { id: userId } });
         return { data: " User successfully deleted " }
     }*/
-
-
-
-
-
-
-
-
 }

@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Publication } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -22,6 +23,13 @@ export class PubService {
             }
         })
     }
+    async getPubById(pubId: number): Promise<Publication> {
+        const publication = await this.prismaService.publication.findUnique({
+            where: { pubid: pubId },
+        });
+        if (!publication) throw new NotFoundException("Publication not found");
+        return publication;
+    }
     async create(createPubDto: CreatePubDto, userId: number) {
         const {marque ,model,anneeFabrication, nombrePlace,couleur,kilometrage,prix, descrption,  typeCarburant} = createPubDto
      await this.prismaService.publication.create ({ data : {
@@ -41,7 +49,6 @@ export class PubService {
     async update(pubid: number, userId: any , updatePubDto :UpdatePubDto) {
         const publication =  await this.prismaService.publication.findUnique({where : {pubid}})
         if (!publication) throw new NotFoundException("Publication not found")
-         // vérification de l'utilisateur qui essaie de supprimer la publication
       if ( publication.userId != userId ) throw new ForbiddenException ("Forbidden action")
       await this.prismaService.publication.update({ where : {pubid} , data : {...updatePubDto} })
      return  {data :"Publication modifiée !"}
