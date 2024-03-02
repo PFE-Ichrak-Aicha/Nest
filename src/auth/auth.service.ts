@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ResetPasseDemandDto } from 'dto/resetPassDemandDto';
 import { ResetPasseConfirmationDto } from 'dto/resetPasseConfirmationDto';
+import { UserService } from 'src/user/user.service';
 //import { DeleteAccountDto } from 'dto/deleteAccountDto';
 @Injectable()
 export class AuthService {
@@ -17,19 +18,22 @@ export class AuthService {
     constructor(private readonly prismaService: PrismaService,
         private readonly mailerService: MailerService,
         private readonly JwtService: JwtService,
-        private readonly configService: ConfigService) { }
+        private readonly configService: ConfigService,
+        private readonly userService: UserService,) { }
     async inscription(inscriptionDto: InscriptionDto) {
-      
-        const { Nom, Prenom, NumTel, Adresse, Ville, email, MotDePasse, CodePostal, PhotoProfil ,MotDePasseConfirmation } = inscriptionDto
+
+        const { Nom, Prenom, NumTel, Adresse, Ville, email, MotDePasse, CodePostal, PhotoProfil, MotDePasseConfirmation } = inscriptionDto
         //**vérification de user : déja inscrit ou non */
         const user = await this.prismaService.user.findUnique({ where: { email } });
         if (user) throw new ConflictException('Utilisateur déja exist !');
         //**vérification de mot de passe et de sa confirmation */
-  if (MotDePasse !== MotDePasseConfirmation) throw new BadRequestException('Les mots de passe ne correspondent pas');
+        if (MotDePasse !== MotDePasseConfirmation) throw new BadRequestException('Les mots de passe ne correspondent pas');
         //** hasher mdp*/
         const salt = await bcrypt.genSalt();
         const hash = await bcrypt.hash(inscriptionDto.MotDePasse, salt);
-        await this.prismaService.user.create({
+        const userExists = await this.prismaService.user.findUnique({ where: { email } });
+        if (userExists) throw new ConflictException('Utilisateur déja exist !');
+        const newUser = await this.prismaService.user.create({
             data: {
                 Nom,
                 Prenom,
@@ -38,16 +42,27 @@ export class AuthService {
                 Ville,
                 email,
                 MotDePasse: hash,
+                MotDePasseConfirmation,
                 CodePostal,
                 PhotoProfil: PhotoProfil ? PhotoProfil : null,
             },
-        });
+        }); 
+       // if (PhotoProfil) {
+            //await this.userService.associateProfileImage(newUser.id, PhotoProfil);
+        //}
         //**Envoyer un email de confirmation */
         await this.mailerService.sendInscriptionConfirmation(inscriptionDto.email);
+        const payload = {
+            sub: newUser.id,
+            email: newUser.email
+        }
+        const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
         //**retourner une réponse de succès */
-        return { data: 'Utilisateur enregistré ' };
+        //return { data: 'Utilisateur enregistré ' };
+        //const connectedUser = await this.connexion({ email, MotDePasse: inscriptionDto.MotDePasse }, token);
+        return { message: "Utilisateur enregistré et connecté", user: newUser , token};
     }
-    async connexion(connexionDto: connexionDto) {
+    async connexion(connexionDto: connexionDto ) {
         const { email, MotDePasse } = connexionDto
         //** nvirifo sa3a kan user inscrit wala */
         const user = await this.prismaService.user.findUnique({ where: { email } })
@@ -55,17 +70,35 @@ export class AuthService {
         //**ncomparo l pass */
         const match = await bcrypt.compare(MotDePasse, user.MotDePasse);
         if (!match) throw new ForbiddenException("Mot De Passe Incorrect")
+        //if (token) {
+            const payload = { sub: user.id, email: user.email };
+            //** verifier la validité du token */
+           // const decoded = this.JwtService.verify(token, { secret: this.configService.get('SECRET_KEY') });
+            //if (decoded.sub === payload.sub && decoded.email === payload.email) {
+               // return { message: "Utilisateur connecté", user };
+            //} else {
+                //throw new ForbiddenException("Token invalide");
+            //}
+            const token = this.JwtService.sign(payload, {
+                expiresIn: '2h',
+                secret: this.configService.get('SECRET_KEY'),
+              });
+              return {
+                id: user.id,
+                email: user.email,
+                token,
+              };
         //**retourne token */
-        const payload = {
-            sub: user.id,
-            email: user.email
-        }
-        const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
-        return {
-            token, user: {
-                email: user.email
-            },
-        };
+        //const payload = {
+            //sub: user.id,
+           // email: user.email
+        //}
+        //const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
+        //return {
+            //token, user: {
+           //     email: user.email
+         //   },
+       // };
     }
     async resetPasseDemand(resetPasseDemandDto: ResetPasseDemandDto) {
         const { email } = resetPasseDemandDto;

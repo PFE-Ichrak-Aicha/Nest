@@ -13,6 +13,7 @@ import { MediaModule } from './media/media.module';
   imports: [AuthModule, PrismaModule, ConfigModule.forRoot({ isGlobal: true }), MailerModule , PassportModule , JwtModule, PubModule, UserModule,
     MulterModule.register({
     dest: './upload',
+
   }),
     MediaModule,]
 })

@@ -1,5 +1,6 @@
 import { TypeCarburant } from "@prisma/client"
-import { IsNotEmpty } from "class-validator"
+import { IsArray, IsNotEmpty } from "class-validator"
+//import { MediaDto } from "./mediaDto"
 
 export class CreatePubDto {
     @IsNotEmpty()
@@ -19,4 +20,15 @@ export class CreatePubDto {
     descrption: string
     @IsNotEmpty()
     typeCarburant: TypeCarburant
+    //media: MediaDto[];
+    //userId: number;
+    //@IsArray()
+   // images?: string[];
+    //video?: string;
+    //@IsNotEmpty()
+    // @IsArray()
+    //images?: Express.Multer.File[];
+    // @IsNotEmpty()
+    //@IsArray()
+    //videos?: Express.Multer.File[];
 }

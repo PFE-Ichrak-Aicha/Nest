@@ -6,7 +6,7 @@ export class InscriptionDto {
     @IsNotEmpty()
     Prenom: string
     @IsNotEmpty()
-    NumTel: number
+    NumTel: string
     @IsNotEmpty()
     Adresse: string
     @IsEmail()
@@ -17,7 +17,7 @@ export class InscriptionDto {
     @IsNotEmpty()
     Ville: string
     CodePostal: string
-    PhotoProfil : string
+    PhotoProfil: string
     @IsNotEmpty()
     MotDePasseConfirmation: string;
 

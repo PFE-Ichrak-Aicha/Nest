@@ -9,7 +9,7 @@ import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { User } from '@prisma/client';
 import path from 'path';
 import * as fs from 'fs';
-export interface UserWithoutPassword extends Omit<User, 'MotDePasse'> {}
+export interface UserWithoutPassword extends Omit<User, 'MotDePasse'> { }
 @Injectable()
 export class UserService {
 
@@ -20,21 +20,59 @@ export class UserService {
         });
         if (!user) {
             throw new NotFoundException('User not found');
-          }
-          // Exclure le champ MotDePasse de l'objet retourné
-          const { MotDePasse, ...userWithoutPassword } = user;
-          return userWithoutPassword;
-        
+        }
+        // Exclure le champ MotDePasse de l'objet retourné
+        const { MotDePasse, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+
     }
-    async deleteAccount(userId: any, deleteAccountDto: DeleteAccountDto) {
-        const { MotDePasse } = deleteAccountDto
+    async associateProfileImage(user: User, profileImage: string): Promise<void> {
+        // Recherche de l'utilisateur par ID
+        const existingUser = await this.prismaService.user.findUnique({ where: { id: user.id } });
+
+        // Vérifier si l'utilisateur existe
+        if (!existingUser) {
+            throw new NotFoundException('Utilisateur non trouvé');
+        }
+
+        // Mettre à jour l'utilisateur avec la photo de profil
+        await this.prismaService.user.update({
+            where: { id: user.id },
+            data: { PhotoProfil: profileImage },
+        });
+    }
+    /**async associateProfileImage(userId: number, PhotoProfil : string): Promise<void> {
+        const existingUser = await this.prismaService.user.findUnique({ where: { id: userId } });
+        if (!existingUser) {
+          // Gérer le cas où l'utilisateur n'existe pas
+        }
+        if (existingUser.PhotoProfil) {
+          // Gérer le cas où l'utilisateur a déjà une photo de profil
+        }
+        await this.prismaService.user.update({
+          where: { id: userId },
+          data: {PhotoProfil  },
+        });
+      }*/
+    async deleteAccount(userId: number) {
+
         const user = await this.prismaService.user.findUnique({ where: { id: userId } })
         if (!user) throw new NotFoundException('User not found')
-        const match = await bcrypt.compare(MotDePasse, user.MotDePasse);
-        if (!match) throw new ForbiddenException("Mot De Passe Incorrect")
+
+
         await this.prismaService.user.delete({ where: { id: userId } });
         return { data: " User successfully deleted " }
     }
+    /*async deleteAccount(userId: number) {
+       const user = await this.prismaService.user.findUnique({ where: { id: userId } });
+       if (!user) {
+           throw new NotFoundException('Utilisateur non trouvé');
+       }
+       // Supprimer l'utilisateur de la base de données
+       await this.prismaService.user.delete({ where: { id: userId } });
+       // Retourner un message de confirmation
+       return { message: 'Compte utilisateur supprimé avec succès' };
+   }*/
     async updateAccount(userId: number, updateAccountDto: UpdateAccountDto) {
         const user = await this.prismaService.user.findUnique({ where: { id: userId } })
         if (!user) throw new NotFoundException('User not found')
@@ -55,6 +93,25 @@ export class UserService {
         }
         return { message: 'Compte utilisateur mis à jour avec succès.' };
 
+    }
+    async getProfileImageName(userId: number) {
+        // Recherchez l'utilisateur dans la base de données en fonction de son ID
+        try {
+            // Recherchez l'utilisateur dans la base de données en fonction de son ID
+            const user = this.prismaService.user.findUnique({
+                where: { id: userId },
+                select: { PhotoProfil: true } // Sélectionnez uniquement le champ PhotoProfil
+            });
+
+            if (!user || !(await user).PhotoProfil) {
+                throw new NotFoundException('Image de profil non trouvée pour cet utilisateur');
+            }
+
+            // Retournez le nom de l'image de profil
+            return (await user).PhotoProfil;
+        } catch (error) {
+            throw error;
+        }
     }
     async updateProfileImage(userId: number, filename: string): Promise<Object> {
         // Recherche de l'utilisateur dans la base de données
