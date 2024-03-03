@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { ResetPasseDemandDto } from 'dto/resetPassDemandDto';
 import { ResetPasseConfirmationDto } from 'dto/resetPasseConfirmationDto';
 import { UserService } from 'src/user/user.service';
+import { ValidatePassCodeDto } from 'dto/validatePassCodeDto';
 //import { DeleteAccountDto } from 'dto/deleteAccountDto';
 @Injectable()
 export class AuthService {
@@ -102,6 +103,38 @@ export class AuthService {
     }
     async resetPasseDemand(resetPasseDemandDto: ResetPasseDemandDto) {
         const { email } = resetPasseDemandDto;
+        const code = speakeasy.totp({
+          secret: this.configService.get("OTP_SECRET"),
+          digits: 5,
+          step: 60 * 15,
+          encoding: "base32"
+        });
+        await this.mailerService.sendResetPassRequest(email, code);
+        return { data: "Reset pass mail has been sent" };
+      }
+      
+      async validatePasswordResetCode(validatePassCodeDto: ValidatePassCodeDto) {
+        const { code } = validatePassCodeDto;
+        const secret = this.configService.get("OTP_SECRET");
+        const token = speakeasy.totp({ secret, encoding: "base32" });
+        if (token !== code) throw new UnauthorizedException("Invalid token");
+        return { data: "Password reset code is valid" };
+      }
+      
+      async resetPasseConfirmation(resetPasseConfirmationDto: ResetPasseConfirmationDto) {
+        const { email, MotDePasseN, code } = resetPasseConfirmationDto;
+        const secret = this.configService.get("OTP_SECRET");
+        const token = speakeasy.totp({ secret, encoding: "base32" });
+        if (token !== code) throw new UnauthorizedException("Invalid token");
+        const hash = await bcrypt.hash(MotDePasseN, 10);
+        await this.prismaService.user.update({
+            where: { email },
+            data: { MotDePasse: hash }
+        });
+        return { data: "Mot De Passe updated " };
+      }
+   /* async resetPasseDemand(resetPasseDemandDto: ResetPasseDemandDto) {
+        const { email } = resetPasseDemandDto;
         const user = await this.prismaService.user.findUnique({ where: { email } })
         if (!user) throw new NotFoundException('User not found')
         const code = speakeasy.totp({
@@ -131,7 +164,7 @@ export class AuthService {
         const hash = await bcrypt.hash(MotDePasse, 10)
         await this.prismaService.user.update({ where: { email }, data: { MotDePasse: hash } })
         return { data: "Mot De Passe updated " }
-    }
+    }*/
     /*
     async deleteAccount(userId: any, deleteAccountDto: DeleteAccountDto) {
         const { MotDePasse } = deleteAccountDto

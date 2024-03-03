@@ -4,7 +4,7 @@ export class ResetPasseConfirmationDto{
     @IsNotEmpty()
     email: string
     @IsNotEmpty()
-    MotDePasse: string
+    MotDePasseN: string
     @IsNotEmpty()
     code : string
 

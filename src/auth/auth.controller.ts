@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, ParseIntPipe, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Param, ParseIntPipe, Post, Put, Req, Res, UseGuards } from '@nestjs/common';
 import { InscriptionDto } from 'dto/inscriptionDto';
 import { AuthService } from './auth.service';
 import { connexionDto } from 'dto/connexionDto';
@@ -7,6 +7,8 @@ import { ResetPasseConfirmationDto } from 'dto/resetPasseConfirmationDto';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { request } from 'http';
+import { Response } from '@nestjs/common'
+import { ValidatePassCodeDto } from 'dto/validatePassCodeDto';
 //import { Request } from "express"
 //import { DeleteAccountDto } from 'dto/deleteAccountDto';
 //import { UpdateAccountDto } from 'dto/updateAccountDto';
@@ -21,14 +23,49 @@ export class AuthController {
     connexion(@Body() connexionDto: connexionDto) {
         return this.authService.connexion(connexionDto)
     }
-    @Post("reset-pass")
-    resetPasseDemand(@Body() resetPasseDemandDto: ResetPasseDemandDto) {
-        return this.authService.resetPasseDemand(resetPasseDemandDto)
+    //@UseGuards(AuthGuard('jwt'))
+    @Post('reset-pass-demand')
+   
+    async resetPasseDemand(@Body() resetPasseDemandDto: ResetPasseDemandDto, @Res() res: Response) {
+      try {
+        const result = await this.authService.resetPasseDemand(resetPasseDemandDto);
+        return { message: "Reset pass mail has been sent", result };
+      } catch (error) {
+        return { message: error.message };
+      }
     }
-    @Post("reset-pass-confirmation")
+  
+    @Post('reset-pass-verification')
+    //@UseGuards(AuthGuard('jwt'))
+    async resetPasseVerification(
+      @Body() validatePassCodeDto: ValidatePassCodeDto,
+      @Res() res: Response,
+    ) {
+      try {
+        const result = await this.authService.validatePasswordResetCode(validatePassCodeDto);
+        return { message: "Password reset code is valid", result };
+      } catch (error) {
+        return { message: error.message };
+      }
+    }
+  
+    @Post('reset-pass-confirmation')
+    //@UseGuards(AuthGuard('jwt'))
+    async resetPasseConfirmation(
+      @Body() resetPasseConfirmationDto: ResetPasseConfirmationDto,
+      @Res() res: Response,
+    ) {
+      try {
+        const result = await this.authService.resetPasseConfirmation(resetPasseConfirmationDto);
+        return { message: "Mot De Passe updated", result };
+      } catch (error) {
+        return { message: error.message };
+      }
+    }
+    /*@Post('reset-pass-confirmation')
     resetPasseConfirmation(@Body() resetPasseConfirmationDto: ResetPasseConfirmationDto) {
-        return this.authService.resetPasseConfirmation(resetPasseConfirmationDto)
-    }
+      return this.authService.resetPasseConfirmation(resetPasseConfirmationDto);
+    }*/
 
     /*@UseGuards(AuthGuard ("jwt"))
     @Delete("delete-account")
@@ -47,4 +84,4 @@ export class AuthController {
          return this.authService.update( userId , updateAccountDto)
      }*/
 
-}
+    }
