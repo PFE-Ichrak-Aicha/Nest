@@ -9,7 +9,7 @@ type Payload = {
 }
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(configService: ConfigService, private readonly prismaService : PrismaService) {
+    constructor(configService: ConfigService, private readonly prismaService: PrismaService) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             secretOrKey: configService.get("SECRET_KEY"),
@@ -17,11 +17,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         })
     }
     async validate(payload: Payload) {
-const user = await this.prismaService.user.findUnique({where : {email : payload.email}})
- if (!user) throw new UnauthorizedException ("Unauthorized")
-  
-Reflect.deleteProperty(user,"MotDePasse")
-console.log(user)
-return user   
-}
+        const user = await this.prismaService.user.findUnique({ where: { email: payload.email } })
+        if (!user) throw new UnauthorizedException("Unauthorized")
+
+        Reflect.deleteProperty(user, "MotDePasse")
+        console.log(user)
+        return user
+    }
 }

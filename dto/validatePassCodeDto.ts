@@ -1,11 +1,12 @@
 import { IsEmail, IsNotEmpty } from "class-validator";
-export class ValidatePassCodeDto{
-    //@IsEmail()
-    //@IsNotEmpty()
-    //email: string
+export class ValidatePassCodeDto {
+    @IsEmail()
+    @IsNotEmpty()
+    email: string
     //@IsNotEmpty()
     //MotDePasseN: string
     @IsNotEmpty()
-    code : string
+    code: string
+    //static code: string;
 
 }

@@ -35,7 +35,7 @@ export class MailerService {
             <p>Le code expirera dans 15 minutes</p>`,
         });
     }
-
+    
     async sendResetPassConfirmationCode(userEmail: string, code: string) {
         const transport = await this.transporter();
         await transport.sendMail({
@@ -45,7 +45,18 @@ export class MailerService {
             html: `<h3>Veuillez saisir le code de vérification pour réinitialiser votre mot de passe.</h3><br><h6>Code de confirmation: <strong>${code}</strong></h6>`,
         });
     }
-
+    async sendResetPass(userEmail: string, url: string, code: string): Promise<void> {
+        const transport = await this.transporter();
+        await transport.sendMail({
+            from: 'app@localhost.com',
+            to: userEmail,
+            subject: 'Demande de réinitialisation de mot de passe',
+            html: `<p>Vous avez demandé une réinitialisation de mot de passe.</p>
+                   <p>Veuillez <a href="${url}?code=${code}">cliquer ici</a> pour réinitialiser votre mot de passe.</p>
+                   <p>Votre code de vérification est : ${code}</p>
+                   <p>Le code expirera dans 15 minutes.</p>`
+        });
+    }
    /* async sendResetPass(userEmail: string, url: string, //code: string
     ) {
         (await this.transporter()).sendMail({

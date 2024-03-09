@@ -15,17 +15,18 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  Nom                    String        @db.VarChar(80)
-  Prenom                 String        @db.VarChar(80)
-  NumTel                 String        @db.VarChar(8)
-  Adresse                String
-  email                  String        @unique @db.VarChar(80)
-  MotDePasse             String        @db.VarChar(80)
-  Ville                  String
-  CodePostal             String?
-  PhotoProfil            String?
-  MotDePasseConfirmation String        @db.VarChar(80)
-  publications           Publication[] @relation("user_publications")
+  Nom          String        @db.VarChar(80)
+  Prenom       String        @db.VarChar(80)
+  NumTel       String        @db.VarChar(8)
+  Adresse      String
+  email        String        @unique @db.VarChar(80)
+  MotDePasse   String        @db.VarChar(80)
+  Ville        String
+  CodePostal   String?
+  PhotoProfil  String?
+  //MotDePasseConfirmation String        @db.VarChar(80)
+  resetCode    String?
+  publications Publication[] @relation("user_publications")
 }
 
 model Publication {
@@ -41,8 +42,8 @@ model Publication {
   typeCarburant    TypeCarburant
   userId           Int // Foreign key referencing User
   images           Image[]
-  video            Video?   @relation(fields: [videoId], references: [id])
-  videoId          Int? @unique
+  video            Video?        @relation(fields: [videoId], references: [id])
+  videoId          Int?          @unique
   //images           Media[]       @relation(name: "PublicationImages")
   //video            Media?        @relation(name: "PublicationVideo")
   // Define the relation to User
@@ -56,27 +57,29 @@ enum TypeCarburant {
   GPL
   Electrique
 }
+
 model Video {
-  id               Int      @id @default(autoincrement())
-  url              String
-  publication      Publication?
+  id          Int          @id @default(autoincrement())
+  url         String
+  publication Publication?
 }
+
 model Image {
-  id               Int      @id @default(autoincrement())
-  url              String
-  publicationId    Int
-  publication      Publication @relation(fields: [publicationId], references: [pubid])
+  id            Int         @id @default(autoincrement())
+  url           String
+  publicationId Int
+  publication   Publication @relation(fields: [publicationId], references: [pubid])
 }
 
 //model Media {
- // mediaID     Int         @id @default(autoincrement())
-  //createdAt   DateTime    @default(now())
-  //updatedAt   DateTime    @updatedAt
-  //images      String
-  //videos      String
-  //filePath    String
-  //fileType    String
-  //mediaType   String
-  //pubId       Int
-  //publication Publication @relation("publication_medias", fields: [pubId], references: [pubid], onUpdate: Cascade, onDelete: Cascade)
+// mediaID     Int         @id @default(autoincrement())
+//createdAt   DateTime    @default(now())
+//updatedAt   DateTime    @updatedAt
+//images      String
+//videos      String
+//filePath    String
+//fileType    String
+//mediaType   String
+//pubId       Int
+//publication Publication @relation("publication_medias", fields: [pubId], references: [pubid], onUpdate: Cascade, onDelete: Cascade)
 //}
