@@ -1,8 +1,9 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import {  Publication } from '@prisma/client';
+import { Publication } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { MediaService } from 'src/media/media.service';
 //import { MediaDto } from 'dto/mediaDto';
 import path, { join } from 'path';
@@ -35,7 +36,7 @@ export class PubService {
     return publication;
   }
 
-  async create(createPubDto: CreatePubDto, userId: number, files: { images: Express.Multer.File[], video?: Express.Multer.File }) {
+  /*async create(createPubDto: CreatePubDto, userId: number, files: { images: Express.Multer.File[], video?: Express.Multer.File }) {
     const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant } = createPubDto;
     
     const imageCreateInputs = files.images.map(image => ({
@@ -52,18 +53,9 @@ export class PubService {
     });
 
     return { message: 'Publication créée avec succès' };
-  }
-  /*async create(createPubDto: CreatePubDto, userId: number) {
-    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant } = createPubDto;
-    
-    await this.prismaService.publication.create({
-      data: {
-        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId,
-      },
-    });
+  }/*
 
-    return { data: " Publication créée " };
-}*/
+
 
   /*async associateMedia(pubId: number, fileName: string, mediaType: 'image' | 'video') {
     try {
@@ -94,7 +86,42 @@ export class PubService {
       throw new Error("Failed to associate media with publication");
     }
 }*/
+  async create(createPubDto: CreatePubDto, userId: number) {
+    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant } = createPubDto;
 
+    await this.prismaService.publication.create({
+      data: {
+        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId,
+      },
+    });
+
+    return { data: " Publication créée " };
+  }
+  async associateImagesToPublication(userId: number, imagePaths: string[]): Promise<void> {
+    // Recherche de la publication associée à l'utilisateur
+    const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: userId } });
+
+    // Vérifier si la publication existe
+    if (!existingPublication) {
+        throw new NotFoundException('Publication non trouvée');
+    }
+ // Construire l'objet 'where' avec l'identifiant de la publication
+ //const publicationWhere = { id: existingPublication.pubid };
+ // Rechercher les images existantes dans la base de données
+// const existingImages = await this.prismaService.image.findMany({
+  //where: { id: { in: imagePaths } }
+//});
+   // Récupérer les identifiants des images existantes
+   const imageIds: number[] = imagePaths.map(path => parseInt(path, 10));
+ // Convertir les chemins d'accès des images en un tableau d'objets ImageWhereUniqueInput
+ //const imageWhereUniqueInputs = imagePaths.map(path => ({ path }));
+    await this.prismaService.publication.update({
+      where: { pubid : existingPublication.pubid  },
+      data: {  images: {
+        set: imageIds.map(id => ({ id }))
+      } }
+  });
+}
   async delete(pubid: number, userId: number) {
     const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
     if (!publication) throw new NotFoundException("Publication not found")

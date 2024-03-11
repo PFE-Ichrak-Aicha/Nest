@@ -8,7 +8,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { request } from 'http';
 //import { Response } from '@nestjs/common'
-import { Response } from 'express';
+import { Response , Request } from 'express';
 
 import { ValidatePassCodeDto } from 'dto/validatePassCodeDto';
 //import { Request } from "express"
@@ -34,7 +34,47 @@ export class AuthController {
       return res.status(500).json({ message: error.message });
     }
   }
-  @Post('reset-pass-verification')
+  
+
+@Post('reset-pass-verification')
+async validateResetCode(@Body() validatePassCodeDto: ValidatePassCodeDto, @Res() res: Response, @Req() req:Request) {
+  try {
+    const result = await this.authService.validatePasswordResetCode(validatePassCodeDto.code ,req );
+    if ('error' in result) {
+        return res.status(401).json({ message: result.error });
+    } else {
+        const email = this.authService.getEmailFromResetUrl(req);
+        // Continuer avec le reste du code en utilisant l'email récupéré et le code validé
+        return res.status(200).json({ message: 'Reset code validated successfully' });
+    }
+} catch (error) {
+    return res.status(401).json({ message: error.message });
+}
+}
+
+/*@Post('reset-pass-confirmation')
+async resetPassConfirmation(@Body() resetPassConfirmationDto: ResetPasseConfirmationDto, @Res() res: Response) {
+  try {
+    await this.authService.resetPassConfirmation(resetPassConfirmationDto.MotDePasseN,resetPassConfirmationDto.email);
+    return res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}*/
+@Post('reset-pass-confirmation')
+async resetPassConfirmation(@Body() resetPassConfirmationDto: ResetPasseConfirmationDto, @Req() req: Request, @Res() res: Response) {
+  try {
+    const { MotDePasseN } = resetPassConfirmationDto;
+    const email = req.query.email as string; // Récupérer l'e-mail à partir de la requête
+    if (!email) throw new Error('Email not found in request');
+    await this.authService.resetPassConfirmation(MotDePasseN, email);
+    return res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+ /* @Post('reset-pass-verification')
   async validateResetCode(@Body() validatePassCodeDto: ValidatePassCodeDto, @Res() res: Response) {
     try {
       await this.authService.validatePasswordResetCode(validatePassCodeDto);
@@ -52,7 +92,7 @@ export class AuthController {
     } catch (error) {
       return res.status(500).json({ message: error.message });
     }
-  }
+  }*/
   //@UseGuards(AuthGuard('jwt'))
   /*@Post('reset-pass-demand')
   async resetPasseDemand(@Body() resetPasseDemandDto: ResetPasseDemandDto, @Res() res: Response) {

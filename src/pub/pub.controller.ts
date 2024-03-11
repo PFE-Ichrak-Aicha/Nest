@@ -1,6 +1,7 @@
 import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Req, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PubService } from './pub.service';
 import { AuthGuard } from '@nestjs/passport';
+import { UserService } from 'src/user/user.service';
 import { CreatePubDto } from 'dto/createPubDto';
 import { Request } from 'express';
 import { UpdatePubDto } from 'dto/updatePubDto';
@@ -47,6 +48,9 @@ export const publicationStorage = {
 
 @Controller('pubs')
 export class PubController {
+  publicationService: any;
+  prismaService: any;
+  userService: any;
   // mediaService: any;
   constructor(private readonly pubService: PubService, private readonly mediaService: MediaService) { }
   @Get()
@@ -59,7 +63,7 @@ export class PubController {
     return this.pubService.getPubById(pubId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  /*@UseGuards(AuthGuard('jwt'))
   @Post('create')
   @UseInterceptors(
     FileInterceptor('images', { storage: publicationStorage.imageStorage }),
@@ -76,13 +80,40 @@ export class PubController {
     // et à la vidéo via `files.video`
 
     return this.pubService.create(createPubDto, userId, files);
-  }
-    /*@UseGuards(AuthGuard("jwt"))
+  }*/
+    @UseGuards(AuthGuard("jwt"))
   @Post("create")
   create(@Body() createPubDto: CreatePubDto, @Req() request: Request) {
       const userId = request.user["id"]
       return this.pubService.create(createPubDto, userId)
-  }*/
+  }
+  async uploadFiles(@UploadedFiles() files, @Req() request: Request): Promise<Observable<Object>> {
+    const user: User = request.user as User;
+    if (!user || !user.id) {
+        throw new NotFoundException('Utilisateur non trouvé');
+    }
+    const userExists = await this.userService.getUserById(user.id);
+    if (!userExists) {
+        throw new NotFoundException('Utilisateur non trouvé');
+    }
+
+    // Vérifier si la publication existe
+    const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: user.id } });
+    if (!existingPublication) {
+        throw new NotFoundException('Publication non trouvée');
+    }
+
+    const fileNames: string[] = [];
+    files.forEach(file => {
+        fileNames.push(file.filename);
+    });
+
+    // Associez les noms des fichiers à la publication
+    await this.publicationService.associateImagesToPublication(user.id, fileNames);
+
+    return of({ imagePaths: fileNames });
+}
+
  /* @UseGuards(AuthGuard('jwt'))
   @Post(':pubid/upload')
   @UseInterceptors(
