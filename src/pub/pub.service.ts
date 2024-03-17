@@ -4,6 +4,7 @@ import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { UserService } from 'src/user/user.service';
 import { MediaService } from 'src/media/media.service';
 //import { MediaDto } from 'dto/mediaDto';
 import path, { join } from 'path';
@@ -97,24 +98,17 @@ export class PubService {
 
     return { data: " Publication créée " };
   }
-  async associateImagesToPublication(userId: number, imagePaths: string[]): Promise<void> {
+  async associateImagesToPublication(pubId: number, imagePaths: string[]): Promise<void> {
     // Recherche de la publication associée à l'utilisateur
-    const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: userId } });
+    const existingPublication = await this.prismaService.publication.findUnique({ where: { pubid: pubId} });
 
     // Vérifier si la publication existe
     if (!existingPublication) {
         throw new NotFoundException('Publication non trouvée');
     }
- // Construire l'objet 'where' avec l'identifiant de la publication
- //const publicationWhere = { id: existingPublication.pubid };
- // Rechercher les images existantes dans la base de données
-// const existingImages = await this.prismaService.image.findMany({
-  //where: { id: { in: imagePaths } }
-//});
-   // Récupérer les identifiants des images existantes
+
    const imageIds: number[] = imagePaths.map(path => parseInt(path, 10));
- // Convertir les chemins d'accès des images en un tableau d'objets ImageWhereUniqueInput
- //const imageWhereUniqueInputs = imagePaths.map(path => ({ path }));
+
     await this.prismaService.publication.update({
       where: { pubid : existingPublication.pubid  },
       data: {  images: {
@@ -122,6 +116,20 @@ export class PubService {
       } }
   });
 }
+
+  /*async associateImagesToPublication(userId: number, imagePaths: string[]): Promise<void> { 
+    const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: userId } });
+    if (!existingPublication) {
+        throw new NotFoundException('Publication non trouvée');
+    }
+   const imageIds: number[] = imagePaths.map(path => parseInt(path, 10));
+    await this.prismaService.publication.update({
+      where: { pubid : existingPublication.pubid  },
+      data: {  images: {
+        set: imageIds.map(id => ({ id }))
+      } }
+  });
+}*/
   async delete(pubid: number, userId: number) {
     const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
     if (!publication) throw new NotFoundException("Publication not found")

@@ -2,32 +2,25 @@ import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, 
 import { PubService } from './pub.service';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from 'src/user/user.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePubDto } from 'dto/createPubDto';
 import { Request } from 'express';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { MediaService } from 'src/media/media.service';
-import {  Publication, User } from '@prisma/client';
-import { FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-//import { MediaDto } from 'dto/mediaDto';
-//import multer, { diskStorage } from 'multer';
+import { Publication, User } from '@prisma/client';
 import * as multer from 'multer';
-import { extname } from 'path';
 import { Observable, of } from 'rxjs';
+import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 export const publicationStorage = {
   imageStorage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, './uploads/images');
-    },
+    destination: './uploads/images',
     filename: (req, file, cb) => {
-      const extension = file.originalname.split('.').pop();
-      const isValidExtension = ['jpg', 'jpeg', 'png', 'gif'].includes(extension.toLowerCase());
-
-      if (!isValidExtension) {
-        return (new Error('Extension de fichier invalide'));
-      }
-
-      cb(null, `${Date.now()}-${file.originalname}`);
-    },
+      console.log('Configuration du stockage :', file);
+      let splitedName = file.originalname.split('.')
+      const filename: string = splitedName[0];
+      const extention: string = file.mimetype.split('/')[1];;
+      cb(null, `${filename}.${extention}`);
+    }
   }),
   videoStorage: multer.diskStorage({
     destination: (req, file, cb) => {
@@ -49,107 +42,130 @@ export const publicationStorage = {
 @Controller('pubs')
 export class PubController {
   publicationService: any;
-  prismaService: any;
-  userService: any;
-  // mediaService: any;
-  constructor(private readonly pubService: PubService, private readonly mediaService: MediaService) { }
+  constructor(private readonly pubService: PubService, private readonly mediaService: MediaService, private readonly userService: UserService, private readonly prismaService: PrismaService) { }
   @Get()
   getAll() {
     return this.pubService.getAll()
   }
-
   @Get(':pubid') @UseGuards(AuthGuard('jwt'))
   async getPublicationById(@Param('pubid', ParseIntPipe) pubId: number) {
     return this.pubService.getPubById(pubId);
   }
 
-  /*@UseGuards(AuthGuard('jwt'))
-  @Post('create')
-  @UseInterceptors(
-    FileInterceptor('images', { storage: publicationStorage.imageStorage }),
-    FileInterceptor('video', { storage: publicationStorage.videoStorage })
-  )
-  async create(
-    @Body() createPubDto: CreatePubDto,
-    @Req() request: Request,
-    @UploadedFiles() files: { images: Array<Express.Multer.File>, video?: Express.Multer.File }
-  ) {
-    const userId = request.user["id"];
-    
-    // Vous pouvez accéder aux images téléchargées via `files.images`
-    // et à la vidéo via `files.video`
-
-    return this.pubService.create(createPubDto, userId, files);
-  }*/
-    @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"))
   @Post("create")
   create(@Body() createPubDto: CreatePubDto, @Req() request: Request) {
-      const userId = request.user["id"]
-      return this.pubService.create(createPubDto, userId)
+    const userId = request.user["id"]
+    return this.pubService.create(createPubDto, userId)
   }
-  async uploadFiles(@UploadedFiles() files, @Req() request: Request): Promise<Observable<Object>> {
-    const user: User = request.user as User;
-    if (!user || !user.id) {
-        throw new NotFoundException('Utilisateur non trouvé');
-    }
-    const userExists = await this.userService.getUserById(user.id);
-    if (!userExists) {
-        throw new NotFoundException('Utilisateur non trouvé');
-    }
 
-    // Vérifier si la publication existe
-    const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: user.id } });
-    if (!existingPublication) {
+
+  // @Post('upload')
+  // @UseInterceptors(AnyFilesInterceptor())
+  // uploadFile(@UploadedFiles() files: Array<Express.Multer.File>) {
+  //   console.log(files[1].originalname);
+  // }
+  @UseGuards(AuthGuard('jwt'))
+  @Post('uploads/:pubId')
+  @UseInterceptors(AnyFilesInterceptor())
+
+  @UseInterceptors(FileInterceptor('images'))
+  async uploadFiles(@UploadedFiles() files: Array<Express.Multer.File>, @Param('pubId', ParseIntPipe) pubId: number) {
+    try {
+      console.log(files);
+      if (!files || files.length === 0) {
+        console.log(files);
+        return;
+      }
+      const publicationExists = await this.pubService.getPubById(pubId);
+      if (!publicationExists) {
         throw new NotFoundException('Publication non trouvée');
-    }
+      }
 
-    const fileNames: string[] = [];
-    files.forEach(file => {
+      const fileNames: string[] = [];
+      files.forEach(file => {
         fileNames.push(file.filename);
-    });
+      });
+      const res = await this.publicationService.associateImagesToPublication(pubId, fileNames);
 
-    // Associez les noms des fichiers à la publication
-    await this.publicationService.associateImagesToPublication(user.id, fileNames);
+      return res;
+    } catch (err) {
 
-    return of({ imagePaths: fileNames });
-}
+      console.log("exception ===", err.message);
 
- /* @UseGuards(AuthGuard('jwt'))
-  @Post(':pubid/upload')
-  @UseInterceptors(
-    FileInterceptor('images', { storage: publicationStorage.imageStorage }),
-    FileInterceptor('video', { storage: publicationStorage.videoStorage })
-  )
-  async uploadFiles(
-    @UploadedFiles() files: { images?: Express.Multer.File[], video?: Express.Multer.File[] },
-    @Req() request: Request
-  ): Promise<Observable<Object>> {
-    const user: User = request.user as User;
-    if (!user || !user.id) {
-      throw new NotFoundException('Utilisateur non trouvé');
     }
 
-    const pubId = parseInt(request.params.pubid); // Obtenir l'ID de la publication depuis les paramètres de la requête
+  }
 
-    const pubExists = await this.pubService.getPubById(pubId);
-    if (!pubExists) {
-      throw new NotFoundException('Publication non trouvée');
-    }
+  /* @UseGuards(AuthGuard('jwt'))
+   @Post('uploads')
+   @UseInterceptors(FileInterceptor('files',{ storage: publicationStorage.imageStorage }))
+   async uploadFiles(@UploadedFiles() files, @Req() request: Request): Promise<Observable<Object>> {
+     if (!files || files.length === 0) {
+       throw new BadRequestException('Aucun fichier téléchargé');
+   }
+     const user: User = request.user as User;
+     if (!user || !user.id) {
+       throw new NotFoundException('Utilisateur non trouvé');
+     }
+     const userExists = await this.userService.getUserById(user.id);
+     if (!userExists) {
+       throw new NotFoundException('Utilisateur non trouvé');
+     }
+ 
+     // Vérifier si la publication existe
+     const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: user.id } });
+     if (!existingPublication) {
+       throw new NotFoundException('Publication non trouvée');
+     }
+ 
+     const fileNames: string[] = [];
+     files.forEach(file => {
+       fileNames.push(file.filename);
+     });
+ 
+     // Associez les noms des fichiers à la publication
+     await this.publicationService.associateImagesToPublication(user.id, fileNames);
+ 
+     return of({ imagePaths: fileNames });
+   }*/
 
-    if (files.images && files.images.length > 0) {
-      const imageFilename = files.images[0].filename;
-      await this.pubService.associateMedia(pubId, imageFilename, 'image');
-      return of({ mediaPath: imageFilename });
-    }
-
-    if (files.video && files.video.length > 0) {
-      const videoFilename = files.video[0].filename;
-      await this.pubService.associateMedia(pubId, videoFilename, 'video');
-      return of({ mediaPath: videoFilename });
-    }
-
-    throw new BadRequestException('Aucun fichier téléchargé');
-  }*/
+  /* @UseGuards(AuthGuard('jwt'))
+   @Post(':pubid/upload')
+   @UseInterceptors(
+     FileInterceptor('images', { storage: publicationStorage.imageStorage }),
+     FileInterceptor('video', { storage: publicationStorage.videoStorage })
+   )
+   async uploadFiles(
+     @UploadedFiles() files: { images?: Express.Multer.File[], video?: Express.Multer.File[] },
+     @Req() request: Request
+   ): Promise<Observable<Object>> {
+     const user: User = request.user as User;
+     if (!user || !user.id) {
+       throw new NotFoundException('Utilisateur non trouvé');
+     }
+ 
+     const pubId = parseInt(request.params.pubid); // Obtenir l'ID de la publication depuis les paramètres de la requête
+ 
+     const pubExists = await this.pubService.getPubById(pubId);
+     if (!pubExists) {
+       throw new NotFoundException('Publication non trouvée');
+     }
+ 
+     if (files.images && files.images.length > 0) {
+       const imageFilename = files.images[0].filename;
+       await this.pubService.associateMedia(pubId, imageFilename, 'image');
+       return of({ mediaPath: imageFilename });
+     }
+ 
+     if (files.video && files.video.length > 0) {
+       const videoFilename = files.video[0].filename;
+       await this.pubService.associateMedia(pubId, videoFilename, 'video');
+       return of({ mediaPath: videoFilename });
+     }
+ 
+     throw new BadRequestException('Aucun fichier téléchargé');
+   }*/
   @UseGuards(AuthGuard("jwt"))
   @Delete("delete/:id")
   delete(@Param("id", ParseIntPipe) pubid: number, @Req() request: Request) {
@@ -196,7 +212,7 @@ async uploadFiles(
 @UploadedFile() video: Express.Multer.File,
 @Body() createPubDto: CreatePubDto,
 ) {
- 
+
 
 // Process imageFiles and videoFiles as needed
 await this.pubService.create(createPubDto, images, video);
@@ -231,24 +247,24 @@ return { message: 'Files uploaded successfully' };
     @Req() req,
   ): Promise<void> {
     const media: MediaDto[] = [];
- 
+
     files.images.forEach((image) => {
       media.push({
         mediaType: 'image',
         url: `/uploads/images/${image.filename}`,
       });
     });
- 
+
     files.videos.forEach((video) => {
       media.push({
         mediaType: 'video',
         url: `/uploads/videos/${video.filename}`,
       });
     });
- 
+
     createPubDto.media = media;
     createPubDto.userId = req.user.id;
- 
+
     await this.pubService.create(createPubDto,media);
   }*/
 
@@ -274,7 +290,7 @@ return { message: 'Files uploaded successfully' };
        // Vous pouvez également ajouter la logique pour valider l'existence de la publication, si nécessaire
        return this.mediaService.createMedia(files, publicationId);
    }
-   /** 
+   /**
    @UseGuards(AuthGuard("jwt"))
    @Post(':pubId/media/upload')
    @UseInterceptors(

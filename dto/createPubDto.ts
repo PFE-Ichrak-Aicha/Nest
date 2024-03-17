@@ -23,11 +23,11 @@ export class CreatePubDto {
     //media: MediaDto[];
     //userId: number;
     //@IsArray()
-   // images?: string[];
+    // images?: string[];
     //video?: string;
-    //@IsNotEmpty()
-    // @IsArray()
-    //images?: Express.Multer.File[];
+    @IsNotEmpty()
+    @IsArray()
+    images: Express.Multer.File[];
     // @IsNotEmpty()
     //@IsArray()
     //videos?: Express.Multer.File[];

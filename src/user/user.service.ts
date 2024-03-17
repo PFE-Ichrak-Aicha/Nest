@@ -24,7 +24,6 @@ export class UserService {
         // Exclure le champ MotDePasse de l'objet retourné
         const { MotDePasse, ...userWithoutPassword } = user;
         return userWithoutPassword;
-
     }
     async associateProfileImage(user: User, profileImage: string): Promise<void> {
         // Recherche de l'utilisateur par ID
@@ -34,7 +33,6 @@ export class UserService {
         if (!existingUser) {
             throw new NotFoundException('Utilisateur non trouvé');
         }
-
         // Mettre à jour l'utilisateur avec la photo de profil
         await this.prismaService.user.update({
             where: { id: user.id },
@@ -55,11 +53,8 @@ export class UserService {
         });
       }*/
     async deleteAccount(userId: number) {
-
         const user = await this.prismaService.user.findUnique({ where: { id: userId } })
         if (!user) throw new NotFoundException('User not found')
-
-
         await this.prismaService.user.delete({ where: { id: userId } });
         return { data: " User successfully deleted " }
     }
