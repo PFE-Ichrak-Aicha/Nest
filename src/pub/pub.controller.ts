@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Req, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req, UploadedFile, UploadedFiles, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { PubService } from './pub.service';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from 'src/user/user.service';
@@ -10,7 +10,8 @@ import { MediaService } from 'src/media/media.service';
 import { Publication, User } from '@prisma/client';
 import * as multer from 'multer';
 import { Observable, of } from 'rxjs';
-import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { PubFilterDto } from 'dto/pubFilterDto';
 export const publicationStorage = {
   imageStorage: multer.diskStorage({
     destination: './uploads/images',
@@ -38,22 +39,72 @@ export const publicationStorage = {
     },
   }),
 };
+function checkFileType(file, cb) {
+  const filetypes = /jpg|jpeg|png/;
+  const extname = filetypes.test(file.originalname.toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
 
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb('Error: Images only!');
+  }
+}
 @Controller('pubs')
 export class PubController {
   publicationService: any;
   constructor(private readonly pubService: PubService, private readonly mediaService: MediaService, private readonly userService: UserService, private readonly prismaService: PrismaService) { }
+
   @Get()
   getAll() {
     return this.pubService.getAll()
   }
-  @Get(':pubid') @UseGuards(AuthGuard('jwt'))
+  /*@Get('search')
+  async searchPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
+    return this.pubService.searchPublications(filterDto);
+  }*/
+  @Get('filtrer')
+  async filterPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
+    if (!filterDto.orderByPrice && !filterDto.orderByKilometrage) {
+      return this.pubService.getAll();
+    }
+    return this.pubService.filterPublications(filterDto);
+  }
+  @Get('search')
+  async searchPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
+    if (!filterDto.marque && !filterDto.model && !filterDto.anneeMin && !filterDto.anneeMax && !filterDto.nombrePlace && !filterDto.kilometrageMin && !filterDto.kilometrageMax && !filterDto.prixMin && !filterDto.prixMax && filterDto.typeCarburant == null && filterDto.couleur == null) {
+      return this.pubService.getAll();
+    }
+
+    return this.pubService.searchPublications(filterDto);
+  }
+
+  @Get('marques')
+  async getAllBrands(): Promise<string[]> {
+    return this.pubService.getAllMarques();
+  }
+  @Get('models')
+  async getAllModels(): Promise<string[]> {
+    return this.pubService.getAllModels();
+  }
+  @Get('couleurs')
+  async getAllColors(): Promise<string[]> {
+    return this.pubService.getAllColors();
+  }
+  @Get('TypesCarburant')
+  async getAllFuelTypes(): Promise<string[]> {
+    return this.pubService.getAllTypesCarburant();
+  }
+
+  @Get(':pubid')
+  @UseGuards(AuthGuard('jwt'))
   async getPublicationById(@Param('pubid', ParseIntPipe) pubId: number) {
     return this.pubService.getPubById(pubId);
   }
 
-  @UseGuards(AuthGuard("jwt"))
+
   @Post("create")
+  @UseGuards(AuthGuard("jwt"))
   create(@Body() createPubDto: CreatePubDto, @Req() request: Request) {
     const userId = request.user["id"]
     return this.pubService.create(createPubDto, userId)
@@ -65,29 +116,33 @@ export class PubController {
   // uploadFile(@UploadedFiles() files: Array<Express.Multer.File>) {
   //   console.log(files[1].originalname);
   // }
-  @UseGuards(AuthGuard('jwt'))
-  @Post('uploads/:pubId')
-  @UseInterceptors(AnyFilesInterceptor())
 
-  @UseInterceptors(FileInterceptor('images'))
+  @Post('uploads/:pubId')
+  @UseGuards(AuthGuard('jwt'))
+  @UseInterceptors(FilesInterceptor('files', 10, {
+    storage: publicationStorage.imageStorage,
+    fileFilter: function (req, file, cb) {
+      checkFileType(file, cb);
+    },
+  }))
   async uploadFiles(@UploadedFiles() files: Array<Express.Multer.File>, @Param('pubId', ParseIntPipe) pubId: number) {
     try {
       console.log(files);
       if (!files || files.length === 0) {
         console.log(files);
-        return;
       }
       const publicationExists = await this.pubService.getPubById(pubId);
       if (!publicationExists) {
         throw new NotFoundException('Publication non trouvée');
       }
-
       const fileNames: string[] = [];
       files.forEach(file => {
-        fileNames.push(file.filename);
+        fileNames.push(file.originalname);
       });
-      const res = await this.publicationService.associateImagesToPublication(pubId, fileNames);
-
+      console.log("publication id =", pubId);
+      console.log("images =", fileNames);
+      const res = await this.pubService.associateImagesToPublication(pubId, fileNames);
+      console.log(res);
       return res;
     } catch (err) {
 
@@ -96,7 +151,6 @@ export class PubController {
     }
 
   }
-
   /* @UseGuards(AuthGuard('jwt'))
    @Post('uploads')
    @UseInterceptors(FileInterceptor('files',{ storage: publicationStorage.imageStorage }))

@@ -9,11 +9,59 @@ import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { User } from '@prisma/client';
 import path from 'path';
 import * as fs from 'fs';
+import { CreateAdminUserDto } from 'dto/createAdminUserDto';
+import { validate } from 'class-validator';
+import { plainToClass } from 'class-transformer';
 export interface UserWithoutPassword extends Omit<User, 'MotDePasse'> { }
+export type AdminUserCreateInput = {
+    email: string;
+    MotDePasse: string;
+    PhotoProfil: string;
+    isAdmin: boolean;
+  };
 @Injectable()
 export class UserService {
 
     constructor(private readonly prismaService: PrismaService,) { }
+
+   /* async createAdminUser(createAdminUserDto: CreateAdminUserDto) {
+        const adminUserDto = plainToClass(CreateAdminUserDto, createAdminUserDto);
+      
+        const errors = await validate(adminUserDto);
+      
+        if (errors.length > 0) {
+          throw new BadRequestException('Invalid input');
+        }
+      
+        const hashedPassword = await bcrypt.hash(createAdminUserDto.MotDePasse, 10);
+      
+        return await this.prismaService.user.create({
+          data: {
+            ...createAdminUserDto,
+            MotDePasse: hashedPassword,
+            isAdmin: true,
+          },
+        });
+      }*/
+     /* async createAdminUser(createAdminUserDto: CreateAdminUserDto): Promise<User> {
+        const hashedPassword = await bcrypt.hash(createAdminUserDto.MotDePasse, 10);
+      
+        return this.prismaService.user.create({
+          data: {
+            ...createAdminUserDto,
+            MotDePasse: hashedPassword,
+            isAdmin: true,
+            PhotoProfil: 'path/to/photo.jpg',
+          },
+        });
+      }*/
+      async getAdminDashboard(): Promise<User[]> {
+        return this.prismaService.user.findMany({
+          where: {
+            isAdmin: true,
+          },
+        });
+      }
     async getUserById(userId: number): Promise<UserWithoutPassword> {
         const user = await this.prismaService.user.findUnique({
             where: { id: userId },

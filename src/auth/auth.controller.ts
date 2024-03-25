@@ -11,6 +11,7 @@ import { request } from 'http';
 import { Response , Request } from 'express';
 
 import { ValidatePassCodeDto } from 'dto/validatePassCodeDto';
+import { AdminGuard } from './admin.guard';
 //import { Request } from "express"
 //import { DeleteAccountDto } from 'dto/deleteAccountDto';
 //import { UpdateAccountDto } from 'dto/updateAccountDto';
@@ -23,6 +24,10 @@ export class AuthController {
   }
   @Post("connexion")
   connexion(@Body() connexionDto: connexionDto) {
+    return this.authService.connexion(connexionDto)
+  }
+  @Post("connexionAdmin")
+  connexionAdmin(@Body() connexionDto: connexionDto) {
     return this.authService.connexion(connexionDto)
   }
   @Post('reset-pass-demand')

@@ -24,13 +24,17 @@ model User {
   Ville        String
   CodePostal   String?
   PhotoProfil  String?
+  isAdmin   Boolean  @default(false)
   //MotDePasseConfirmation String        @db.VarChar(80)
   resetCode    String?
   publications Publication[] @relation("user_publications")
 }
 
 model Publication {
-  pubid            Int           @id @default(autoincrement())
+  pubid Int @id @default(autoincrement())
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
   marque           String        @db.VarChar(20)
   model            String        @db.VarChar(30)
   anneeFabrication Int           @db.Int()
@@ -59,14 +63,18 @@ enum TypeCarburant {
 }
 
 model Video {
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   id          Int          @id @default(autoincrement())
   url         String
   publication Publication?
 }
 
 model Image {
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   id            Int         @id @default(autoincrement())
-  path      String
+  path          String
   publicationId Int
   publication   Publication @relation(fields: [publicationId], references: [pubid])
 }

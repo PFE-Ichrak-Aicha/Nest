@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Publication } from '@prisma/client';
+import { Publication , Image } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -7,12 +7,21 @@ import { Prisma } from '@prisma/client';
 import { UserService } from 'src/user/user.service';
 import { MediaService } from 'src/media/media.service';
 //import { MediaDto } from 'dto/mediaDto';
-import path, { join } from 'path';
+//import path, { join } from 'path';
 import { unlink } from 'fs/promises';
 import * as fs from 'fs';
+import * as path from 'path';
+import { PubFilterDto } from 'dto/pubFilterDto';
+import multer from 'multer';
+import { publicationStorage } from './pub.controller';
+const between = (start: number, end: number) => ({
+  gte: start,
+  lte: end,
+});
 @Injectable()
 export class PubService {
   constructor(private readonly prismaService: PrismaService, private mediaService: MediaService,) { }
+ 
   async getAll() {
     return await this.prismaService.publication.findMany({
       include: {
@@ -26,6 +35,9 @@ export class PubService {
             Adresse: true
           }
         }
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     })
   }
@@ -98,7 +110,139 @@ export class PubService {
 
     return { data: " Publication créée " };
   }
-  async associateImagesToPublication(pubId: number, imagePaths: string[]): Promise<void> {
+  async associateImagesToPublication(pubId: number, fileNames: string[]): Promise<Publication> {
+    const publication = await this.prismaService.publication.findUnique({ where: { pubid: pubId } });
+
+    if (!publication) {
+      throw new NotFoundException('Publication not found');
+    }
+
+    const images = await Promise.all(fileNames.map(async (fileName) => {
+      const image = await this.prismaService.image.create({
+        data: {
+          path: fileName,
+          publication: {
+            connect: {
+              pubid: pubId,
+            },
+          },
+        },
+      });
+      return image;
+    }));
+  
+    return this.prismaService.publication.update({
+      where: { pubid: pubId },
+      data: {
+        images: {
+          connect: images.map((image) => ({ id: image.id })),
+        },
+      },
+    });
+  }
+  async searchPublications(filterDto: PubFilterDto): Promise<Publication[]> {
+    const { marque, model, anneeMin, anneeMax, nombrePlace, kilometrageMin, kilometrageMax, prixMin, prixMax, typeCarburant, couleur } = filterDto;
+  
+    const publications = await this.prismaService.publication.findMany({
+      where: {
+        marque: marque ? { equals: marque } : undefined,
+        model: model ? { equals: model } : undefined,
+        anneeFabrication: anneeMin && anneeMax ? { gte: anneeMin, lte: anneeMax } : undefined,
+        nombrePlace: nombrePlace ? { equals: nombrePlace } : undefined,
+        kilometrage: kilometrageMin && kilometrageMax ? { gte: kilometrageMin, lte: kilometrageMax } : undefined,
+        prix: prixMin && prixMax ? { gte: prixMin, lte: prixMax } : undefined,
+        typeCarburant: typeCarburant ? { equals: typeCarburant } : undefined,
+        couleur: couleur ? { equals: couleur } : undefined,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    return publications;
+  }
+
+  async getAllMarques(): Promise<string[]> {
+    const brands = await this.prismaService.publication.findMany({
+      distinct: ['marque'],
+      select: {
+        marque: true,
+      },
+    });
+    return brands.map((pub) => pub.marque);
+  }
+  async getAllModels(): Promise<string[]> {
+    const models = await this.prismaService.publication.findMany({
+      distinct: ['model'],
+      select: {
+        model: true,
+      },
+    });
+    return models.map((pub) => pub.model);
+  }
+
+  async getAllColors(): Promise<string[]> {
+    const colors = await this.prismaService.publication.findMany({
+      distinct: ['couleur'],
+      select: {
+        couleur: true,
+      },
+    });
+    return
+     colors.map((pub) => pub.couleur);
+  }
+  async getAllTypesCarburant(): Promise<string[]> {
+    const fuelTypes = await this.prismaService.publication.findMany({
+      distinct: ['typeCarburant'],
+      select: {
+        typeCarburant: true,
+      },
+    });
+    return fuelTypes.map((pub) => pub.typeCarburant);
+  }
+  async filterPublications(filterDto: PubFilterDto): Promise<Publication[]> {
+    const publications = await this.prismaService.publication.findMany();
+  
+    if (filterDto.orderByPrice === 'asc') {
+      publications.sort((a, b) => a.prix - b.prix);
+    } else if (filterDto.orderByPrice === 'desc') {
+      publications.sort((a, b) => b.prix - a.prix);
+    }
+  
+    if (filterDto.orderByKilometrage === 'asc') {
+      publications.sort((a, b) => a.kilometrage - b.kilometrage);
+    } else if (filterDto.orderByKilometrage === 'desc') {
+      publications.sort((a, b) => b.kilometrage - a.kilometrage);
+    }
+  
+    return publications;
+  }
+  /*async searchPublications(filterDto: PubFilterDto): Promise<Publication[]> {
+   const { marque, model, anneeMin, anneeMax, nombrePlace, kilometrageMin, kilometrageMax, prixMin, prixMax, typeCarburant } = filterDto;
+    
+    const publications = await this.prismaService.publication.findMany({
+      where: {
+        marque: marque ? { equals: marque } : undefined,
+        model: model ? { equals: model } : undefined,
+        anneeFabrication: {
+          gte: anneeMin,
+          lte: anneeMax,
+        },
+        nombrePlace: nombrePlace ? { equals: nombrePlace } : undefined,
+        kilometrage: {
+          gte: kilometrageMin,
+          lte: kilometrageMax,
+        },
+        prix: {
+          gte: prixMin,
+          lte: prixMax,
+        },
+        typeCarburant: typeCarburant ? { equals: typeCarburant } : undefined,
+      },
+    });
+
+    return publications;
+  }*/
+  /*async associateImagesToPublication(pubId: number, imagePaths: string[]): Promise<void> {
     // Recherche de la publication associée à l'utilisateur
     const existingPublication = await this.prismaService.publication.findUnique({ where: { pubid: pubId} });
 
@@ -110,12 +254,12 @@ export class PubService {
    const imageIds: number[] = imagePaths.map(path => parseInt(path, 10));
 
     await this.prismaService.publication.update({
-      where: { pubid : existingPublication.pubid  },
+      where: { pubid : pubId  },
       data: {  images: {
-        set: imageIds.map(id => ({ id }))
+        connect: imageIds.map(imageId => ({ id: imageId })),
       } }
   });
-}
+}*/
 
   /*async associateImagesToPublication(userId: number, imagePaths: string[]): Promise<void> { 
     const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: userId } });

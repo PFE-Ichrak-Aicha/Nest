@@ -82,7 +82,8 @@ export class AuthService {
         // Génération du token JWT
         const payload = {
             sub: user.id,
-            email: user.email
+            email: user.email,
+    
         };
         const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
 
@@ -105,6 +106,37 @@ export class AuthService {
         //     email: user.email
         //   },
         // };
+    }
+    async connexionAdmin(connexionDto: connexionDto) {
+        const { email, MotDePasse } = connexionDto;
+        // Recherche de l'utilisateur dans la base de données
+        const user = await this.prismaService.user.findUnique({ where: { email} });
+        if (!user || !user.isAdmin) { // Vérifier si l'utilisateur est administrateur
+            throw new ForbiddenException('Only administrators can access this endpoint');
+          }
+        // Vérification du mot de passe
+        const match = await bcrypt.compare(MotDePasse, user.MotDePasse);
+        if (!match) {
+            throw new ForbiddenException("Incorrect password");
+        }
+
+        // Génération du token JWT
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            isAdmin: user.isAdmin,
+    
+        };
+        const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
+
+        // Retour de la réponse avec le token JWT et les informations de l'utilisateur
+        return {
+            token,
+            user: {
+                id: user.id, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
+                email: user.email
+            }
+        };
     }
     async resetPassDemand(email: string): Promise<void> {
         const user = await this.prismaService.user.findUnique({ where: { email } });

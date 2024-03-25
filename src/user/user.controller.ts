@@ -1,7 +1,7 @@
 import { Body, Controller, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Param, Res, ParseIntPipe, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { DeleteAccountDto } from 'dto/deleteAccountDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
-import { UserService } from './user.service';
+import { AdminUserCreateInput, UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -12,6 +12,7 @@ import { Observable, from, map, of } from 'rxjs';
 import * as multer from 'multer';
 import { User } from '@prisma/client';
 import { UserWithoutPassword } from './user.service';
+import { AdminGuard } from 'src/auth/admin.guard';
 
 export const storage = {
     storage: multer.diskStorage({
@@ -30,6 +31,15 @@ export const storage = {
 export class UserController {
     uploadService: any;
     constructor(private readonly userService: UserService) { }
+   /* @Post('create-admin-user')
+    async createAdminUser(@Body() createAdminUserDto: AdminUserCreateInput): Promise<void> {
+      await this.userService.createAdminUser(createAdminUserDto);
+    }*/
+    @UseGuards(AdminGuard)
+    @Get('dashboard')
+    adminDashboard() {
+      return 'Welcome to admin dashboard!';
+    }
     @UseGuards(AuthGuard("jwt"))
     @Get(':id')
     async getUsrById(@Param('id', ParseIntPipe) userId: number): Promise<UserWithoutPassword> {
