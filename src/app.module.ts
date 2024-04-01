@@ -9,6 +9,7 @@ import { PubModule } from './pub/pub.module';
 import { UserModule } from './user/user.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { MediaModule } from './media/media.module';
+import { AdminModule } from './admin/admin.module';
 import * as cors from 'cors';
 @Module({
   imports: [AuthModule, PrismaModule, ConfigModule.forRoot({ isGlobal: true }), MailerModule , PassportModule , JwtModule, PubModule, UserModule,
@@ -16,7 +17,8 @@ import * as cors from 'cors';
     dest: './upload',
 
   }),
-    MediaModule,]
+    MediaModule,
+    AdminModule,]
 })
 export class AppModule {}
  

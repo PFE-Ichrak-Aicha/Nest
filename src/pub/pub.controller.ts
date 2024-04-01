@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req, UploadedFile, UploadedFiles, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, InternalServerErrorException, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { PubService } from './pub.service';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from 'src/user/user.service';
@@ -7,11 +7,11 @@ import { CreatePubDto } from 'dto/createPubDto';
 import { Request } from 'express';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { MediaService } from 'src/media/media.service';
-import { Publication, User } from '@prisma/client';
+import { Publication } from '@prisma/client';
 import * as multer from 'multer';
-import { Observable, of } from 'rxjs';
-import { AnyFilesInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { PubFilterDto } from 'dto/pubFilterDto';
+
 export const publicationStorage = {
   imageStorage: multer.diskStorage({
     destination: './uploads/images',
@@ -39,6 +39,7 @@ export const publicationStorage = {
     },
   }),
 };
+
 function checkFileType(file, cb) {
   const filetypes = /jpg|jpeg|png/;
   const extname = filetypes.test(file.originalname.toLowerCase());
@@ -50,6 +51,7 @@ function checkFileType(file, cb) {
     cb('Error: Images only!');
   }
 }
+
 @Controller('pubs')
 export class PubController {
   publicationService: any;
@@ -59,10 +61,14 @@ export class PubController {
   getAll() {
     return this.pubService.getAll()
   }
-  /*@Get('search')
-  async searchPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
-    return this.pubService.searchPublications(filterDto);
-  }*/
+
+  //GET IMAGESPAR ID
+  @Get(':id/images')
+  async getPublicationImages(@Param('id', ParseIntPipe) id: number) {
+    return this.pubService.getPublicationImages(id);
+  }
+
+  //FILTRER
   @Get('filtrer')
   async filterPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
     if (!filterDto.orderByPrice && !filterDto.orderByKilometrage) {
@@ -70,6 +76,8 @@ export class PubController {
     }
     return this.pubService.filterPublications(filterDto);
   }
+
+  //Search 
   @Get('search')
   async searchPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
     if (!filterDto.marque && !filterDto.model && !filterDto.anneeMin && !filterDto.anneeMax && !filterDto.nombrePlace && !filterDto.kilometrageMin && !filterDto.kilometrageMax && !filterDto.prixMin && !filterDto.prixMax && filterDto.typeCarburant == null && filterDto.couleur == null) {
@@ -79,30 +87,38 @@ export class PubController {
     return this.pubService.searchPublications(filterDto);
   }
 
+  //yraja3lk marques li 3ana fi lbase
   @Get('marques')
   async getAllBrands(): Promise<string[]> {
     return this.pubService.getAllMarques();
   }
+
+  //yraja3lk models li 3ana fi lbase
   @Get('models')
   async getAllModels(): Promise<string[]> {
     return this.pubService.getAllModels();
   }
+
+  //yraja3lk couleurs li 3ana fi lbase
   @Get('couleurs')
   async getAllColors(): Promise<string[]> {
     return this.pubService.getAllColors();
   }
+
+  //yraja3lk type de carburant li 3ana fi lbase 
   @Get('TypesCarburant')
   async getAllFuelTypes(): Promise<string[]> {
     return this.pubService.getAllTypesCarburant();
   }
 
+  //Get PUB PAR ID
   @Get(':pubid')
   @UseGuards(AuthGuard('jwt'))
   async getPublicationById(@Param('pubid', ParseIntPipe) pubId: number) {
     return this.pubService.getPubById(pubId);
   }
 
-
+  //bch ta3mel creation d'une pub
   @Post("create")
   @UseGuards(AuthGuard("jwt"))
   create(@Body() createPubDto: CreatePubDto, @Req() request: Request) {
@@ -110,13 +126,7 @@ export class PubController {
     return this.pubService.create(createPubDto, userId)
   }
 
-
-  // @Post('upload')
-  // @UseInterceptors(AnyFilesInterceptor())
-  // uploadFile(@UploadedFiles() files: Array<Express.Multer.File>) {
-  //   console.log(files[1].originalname);
-  // }
-
+  //bch tuploawdi tsawer
   @Post('uploads/:pubId')
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FilesInterceptor('files', 10, {
@@ -141,91 +151,52 @@ export class PubController {
       });
       console.log("publication id =", pubId);
       console.log("images =", fileNames);
-      const res = await this.pubService.associateImagesToPublication(pubId, fileNames);
-      console.log(res);
-      return res;
+      const imageUrls = await this.pubService.associateImagesToPublication(pubId, fileNames);
+      console.log(imageUrls);
+      return imageUrls;
     } catch (err) {
-
       console.log("exception ===", err.message);
-
     }
-
   }
-  /* @UseGuards(AuthGuard('jwt'))
-   @Post('uploads')
-   @UseInterceptors(FileInterceptor('files',{ storage: publicationStorage.imageStorage }))
-   async uploadFiles(@UploadedFiles() files, @Req() request: Request): Promise<Observable<Object>> {
-     if (!files || files.length === 0) {
-       throw new BadRequestException('Aucun fichier téléchargé');
-   }
-     const user: User = request.user as User;
-     if (!user || !user.id) {
-       throw new NotFoundException('Utilisateur non trouvé');
-     }
-     const userExists = await this.userService.getUserById(user.id);
-     if (!userExists) {
-       throw new NotFoundException('Utilisateur non trouvé');
-     }
- 
-     // Vérifier si la publication existe
-     const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: user.id } });
-     if (!existingPublication) {
-       throw new NotFoundException('Publication non trouvée');
-     }
- 
-     const fileNames: string[] = [];
-     files.forEach(file => {
-       fileNames.push(file.filename);
-     });
- 
-     // Associez les noms des fichiers à la publication
-     await this.publicationService.associateImagesToPublication(user.id, fileNames);
- 
-     return of({ imagePaths: fileNames });
-   }*/
 
-  /* @UseGuards(AuthGuard('jwt'))
-   @Post(':pubid/upload')
-   @UseInterceptors(
-     FileInterceptor('images', { storage: publicationStorage.imageStorage }),
-     FileInterceptor('video', { storage: publicationStorage.videoStorage })
-   )
-   async uploadFiles(
-     @UploadedFiles() files: { images?: Express.Multer.File[], video?: Express.Multer.File[] },
-     @Req() request: Request
-   ): Promise<Observable<Object>> {
-     const user: User = request.user as User;
-     if (!user || !user.id) {
-       throw new NotFoundException('Utilisateur non trouvé');
-     }
- 
-     const pubId = parseInt(request.params.pubid); // Obtenir l'ID de la publication depuis les paramètres de la requête
- 
-     const pubExists = await this.pubService.getPubById(pubId);
-     if (!pubExists) {
-       throw new NotFoundException('Publication non trouvée');
-     }
- 
-     if (files.images && files.images.length > 0) {
-       const imageFilename = files.images[0].filename;
-       await this.pubService.associateMedia(pubId, imageFilename, 'image');
-       return of({ mediaPath: imageFilename });
-     }
- 
-     if (files.video && files.video.length > 0) {
-       const videoFilename = files.video[0].filename;
-       await this.pubService.associateMedia(pubId, videoFilename, 'video');
-       return of({ mediaPath: videoFilename });
-     }
- 
-     throw new BadRequestException('Aucun fichier téléchargé');
-   }*/
+  //bch ta3mel update ll tsawer mta3 une publication
+  @UseGuards(AuthGuard('jwt'))
+  @Put(':pubId/images')
+  @UseInterceptors(FilesInterceptor('files', 10, {
+    storage: publicationStorage.imageStorage,
+    fileFilter: function (req, file, cb) {
+      checkFileType(file, cb);
+    },
+  }))
+  async updatePublicationImages(
+    @Param('pubId', ParseIntPipe) pubId: number,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+  ) {
+    try {
+      // Check if publication exists
+      const publicationExists = await this.pubService.getPubById(pubId);
+      if (!publicationExists) {
+        throw new NotFoundException('Publication not found');
+      }
+
+      // Handle file upload and associate with publication
+      const fileNames: string[] = files.map(file => file.filename);
+      const updatedPublication = await this.pubService.updatePublicationImages(pubId, fileNames);
+      return updatedPublication;
+    } catch (err) {
+      throw new NotFoundException(err.message);
+    }
+  }
+
+  //bch tfasa5 lpub
   @UseGuards(AuthGuard("jwt"))
   @Delete("delete/:id")
   delete(@Param("id", ParseIntPipe) pubid: number, @Req() request: Request) {
     const userId = request.user["id"]
-    return this.pubService.delete(pubid, userId)
+    return this.pubService.deleteWithImages(pubid, userId)
   }
+
+  //bch ta3ml update ll info mta33 lpub
   @UseGuards(AuthGuard("jwt"))
   @Put("update/:id")
   update(@Param("id", ParseIntPipe) pubid: number,
@@ -234,6 +205,32 @@ export class PubController {
     const userId = request.user["id"]
     return this.pubService.update(pubid, userId, updatePubDto)
   }
+
+  //favoris
+  @UseGuards(AuthGuard("jwt"))
+  @Post(':id/favoris')
+  async addToFavorites(@Req() req, @Param('id', ParseIntPipe) publicationId: number) {
+    const userId = req.user.id;
+
+    return this.pubService.addToFavorites(userId, publicationId);
+  }
+  //Bch tchouf biha liste de favoris mta3k
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id/favoris')
+  async getFavorites(@Req() req, @Param('id', ParseIntPipe) publicationId: number) {
+    const userId = req.user.id;
+
+    return this.pubService.getFavorites(userId);
+  }
+  //tnajem tfasa5 favoris mn liste
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id/remove-favoris')
+  async removeFromFavorites(@Req() req, @Param('id', ParseIntPipe) publicationId: number) {
+    const userId = req.user.id;
+
+    return this.pubService.removeFromFavorites(userId, publicationId);
+  }
+
 }
 
 

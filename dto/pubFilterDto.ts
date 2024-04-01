@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsNumber, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, IsInt } from 'class-validator';
 import { TypeCarburant } from '@prisma/client';
+import { Transform } from 'class-transformer';
 
 export class PubFilterDto {
   @IsString()
@@ -10,31 +11,34 @@ export class PubFilterDto {
   @IsOptional()
   model: string;
 
-  @IsNumber()
-  @IsOptional()
-  anneeMin: number;@IsNumber()
-  @IsOptional()
-  anneeMax: number;
 
-  @IsNumber()
   @IsOptional()
-  nombrePlace: number;
 
-  @IsNumber()
-  @IsOptional()
-  kilometrageMin: number;
+  anneeMin: string;
 
-  @IsNumber()
   @IsOptional()
-  kilometrageMax: number;
+  anneeMax: string;
 
-  @IsNumber()
-  @IsOptional()
-  prixMin: number;
 
-  @IsNumber()
   @IsOptional()
-  prixMax: number;
+ 
+  nombrePlace: string;
+
+ 
+  @IsOptional()
+  kilometrageMin: string;
+
+
+  @IsOptional()
+  kilometrageMax: string;
+
+
+  @IsOptional()
+  prixMin: string;
+
+
+  @IsOptional()
+  prixMax: string;
 
   @IsEnum(TypeCarburant)
   @IsOptional()

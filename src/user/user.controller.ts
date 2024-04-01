@@ -1,4 +1,4 @@
-import { Body, Controller, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Param, Res, ParseIntPipe, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Param, Res, ParseIntPipe, NotFoundException, UnauthorizedException, Query, BadRequestException } from '@nestjs/common';
 import { DeleteAccountDto } from 'dto/deleteAccountDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { AdminUserCreateInput, UserService } from './user.service';
@@ -10,7 +10,7 @@ import path, { join } from 'path';
 import { Request, request } from 'express'
 import { Observable, from, map, of } from 'rxjs';
 import * as multer from 'multer';
-import { User } from '@prisma/client';
+import { Publication, User } from '@prisma/client';
 import { UserWithoutPassword } from './user.service';
 import { AdminGuard } from 'src/auth/admin.guard';
 
@@ -31,38 +31,22 @@ export const storage = {
 export class UserController {
     uploadService: any;
     constructor(private readonly userService: UserService) { }
-   /* @Post('create-admin-user')
-    async createAdminUser(@Body() createAdminUserDto: AdminUserCreateInput): Promise<void> {
-      await this.userService.createAdminUser(createAdminUserDto);
-    }*/
-    @UseGuards(AdminGuard)
-    @Get('dashboard')
-    adminDashboard() {
-      return 'Welcome to admin dashboard!';
-    }
+   
     @UseGuards(AuthGuard("jwt"))
     @Get(':id')
     async getUsrById(@Param('id', ParseIntPipe) userId: number): Promise<UserWithoutPassword> {
         return this.userService.getUserById(userId);
     }
+
+
     @UseGuards(AuthGuard("jwt"))
     @Delete("delete-account")
     deleteAccount(@Req() request: Request) {
         const userId = request.user["id"]
         return this.userService.deleteAccount(userId);
     }
-    /*@UseGuards(AuthGuard("jwt"))
-    @Delete("delete-account/:id")
-    async deleteAccount(@Req() request: Request, @Param('id') userId:number) {
-        if (request.user["id"] !== userId) {
-            throw new UnauthorizedException("Vous n'êtes pas autorisé à supprimer ce compte");
-        }
 
-        // Appeler la méthode de service pour supprimer le compte
-        return this.userService.deleteAccount(userId);
-        //return { message: 'Compte utilisateur supprimé avec succès' };
-      
-    }*/
+
     @UseGuards(AuthGuard("jwt"))
     @Put("update-account")
     update(@Req() request: Request,
@@ -71,18 +55,6 @@ export class UserController {
         const userId = request.user["id"]
         return this.userService.updateAccount(userId, updateAccountDto)
     }
-
-    /**@UseGuards(AuthGuard('jwt'))
-    @Post('associate-profile-image')
-    @UseInterceptors(FileInterceptor('file'))
-    async associateProfileImage(
-      @UploadedFile() image: Express.Multer.File,
-      @Req() request: Request,
-    ): Promise<void> {
-      const userId = request.user['id'];
-      const PhotoProfil = image.filename;
-      await this.userService.associateProfileImage(userId,PhotoProfil);
-    }*/
 
     @UseGuards(AuthGuard("jwt"))
     @Post('upload')
@@ -98,16 +70,10 @@ export class UserController {
             throw new NotFoundException('Utilisateur non trouvé');
         }
         await this.userService.associateProfileImage(user, file.filename);
-        // console.log(user)
-        //return from(this.userService.updateAccount(user.id, {PhotoProfil: file.filename})).pipe(
-        // map(() => ({PhotoProfil: user.PhotoProfil}))+
-        // )
         return of({ imagePath: file.filename });
     }
-    /*@Get('profile-image/:imagename')
-    findProfileImage(@Param('imagename') imagename, @Res() res): void {
-        res.sendFile(join(process.cwd(), 'uploads/profileimages/' + imagename))
-    }*/
+
+
     @Get('profile-image/:id')
     async findProfileImage(@Param('id', ParseIntPipe) userId: number, @Res() res): Promise<void> {
         // Récupérez le nom de l'image à partir de la base de données en fonction de l'ID de l'utilisateur
@@ -124,6 +90,8 @@ export class UserController {
             }
         }
     }
+
+
     @UseGuards(AuthGuard("jwt"))
     @Put('update-profile-image')
     @UseInterceptors(FileInterceptor('file', storage))
@@ -131,5 +99,7 @@ export class UserController {
         const userId = request.user["id"];
         return from(this.userService.updateProfileImage(userId, file.filename));
     }
+
+    
 
 }

@@ -62,7 +62,6 @@ export class AuthService {
         const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
         //**retourner une réponse de succès */
         //return { data: 'Utilisateur enregistré ' };
-        //const connectedUser = await this.connexion({ email, MotDePasse: inscriptionDto.MotDePasse }, token);
         return { message: "Utilisateur enregistré et connecté", user: newUser, token };
     }
     async connexion(connexionDto: connexionDto) {
@@ -72,13 +71,11 @@ export class AuthService {
         if (!user) {
             throw new NotFoundException('User not found');
         }
-
         // Vérification du mot de passe
         const match = await bcrypt.compare(MotDePasse, user.MotDePasse);
         if (!match) {
             throw new ForbiddenException("Incorrect password");
         }
-
         // Génération du token JWT
         const payload = {
             sub: user.id,
@@ -86,7 +83,6 @@ export class AuthService {
     
         };
         const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
-
         // Retour de la réponse avec le token JWT et les informations de l'utilisateur
         return {
             token,
@@ -95,17 +91,6 @@ export class AuthService {
                 email: user.email
             }
         };
-        //**retourne token */
-        //const payload = {
-        //sub: user.id,
-        // email: user.email
-        //}
-        //const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
-        //return {
-        //token, user: {
-        //     email: user.email
-        //   },
-        // };
     }
     async connexionAdmin(connexionDto: connexionDto) {
         const { email, MotDePasse } = connexionDto;

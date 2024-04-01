@@ -1,27 +1,23 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Publication , Image } from '@prisma/client';
+import { Publication } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { UserService } from 'src/user/user.service';
-import { MediaService } from 'src/media/media.service';
-//import { MediaDto } from 'dto/mediaDto';
-//import path, { join } from 'path';
-import { unlink } from 'fs/promises';
-import * as fs from 'fs';
-import * as path from 'path';
+import { Image } from '@prisma/client';
 import { PubFilterDto } from 'dto/pubFilterDto';
-import multer from 'multer';
 import { publicationStorage } from './pub.controller';
-const between = (start: number, end: number) => ({
+
+const between = (start:  number, end: number) => ({
   gte: start,
   lte: end,
 });
+
 @Injectable()
 export class PubService {
-  constructor(private readonly prismaService: PrismaService, private mediaService: MediaService,) { }
- 
+  constructor(private readonly prismaService: PrismaService,) { }
+
+
   async getAll() {
     return await this.prismaService.publication.findMany({
       include: {
@@ -41,6 +37,8 @@ export class PubService {
       }
     })
   }
+
+
   async getPubById(pubId: number): Promise<Publication> {
     const publication = await this.prismaService.publication.findUnique({
       where: { pubid: pubId },
@@ -49,56 +47,7 @@ export class PubService {
     return publication;
   }
 
-  /*async create(createPubDto: CreatePubDto, userId: number, files: { images: Express.Multer.File[], video?: Express.Multer.File }) {
-    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant } = createPubDto;
-    
-    const imageCreateInputs = files.images.map(image => ({
-      url: image.path // La propriété `url` est nécessaire dans le schéma Prisma
-    }));
-    const videoPath = files.video ? files.video[0].path : null;
 
-    await this.prismaService.publication.create({
-      data: {
-        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, 
-        images: { create: imageCreateInputs },
-        video: videoPath ? { create: { url: videoPath } } : undefined
-      },
-    });
-
-    return { message: 'Publication créée avec succès' };
-  }/*
-
-
-
-  /*async associateMedia(pubId: number, fileName: string, mediaType: 'image' | 'video') {
-    try {
-      if (mediaType === 'image') {
-        await this.prismaService.publication.update({
-          where: { pubid: pubId },
-          data: {
-            images: {
-              create: {
-                imageFileName: fileName,
-              },
-            },
-          },
-        });
-      } else if (mediaType === 'video') {
-        await this.prismaService.publication.update({
-          where: { pubid: pubId },
-          data: {
-            video: {
-              create: {
-                videoFileName: fileName,
-              },
-            },
-          },
-        });
-      }
-    } catch (error) {
-      throw new Error("Failed to associate media with publication");
-    }
-}*/
   async create(createPubDto: CreatePubDto, userId: number) {
     const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant } = createPubDto;
 
@@ -107,16 +56,15 @@ export class PubService {
         marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId,
       },
     });
-
     return { data: " Publication créée " };
   }
-  async associateImagesToPublication(pubId: number, fileNames: string[]): Promise<Publication> {
-    const publication = await this.prismaService.publication.findUnique({ where: { pubid: pubId } });
 
+
+  async associateImagesToPublication(pubId: number, fileNames: string[]): Promise<string[]> {
+    const publication = await this.prismaService.publication.findUnique({ where: { pubid: pubId } });
     if (!publication) {
       throw new NotFoundException('Publication not found');
     }
-
     const images = await Promise.all(fileNames.map(async (fileName) => {
       const image = await this.prismaService.image.create({
         data: {
@@ -130,8 +78,7 @@ export class PubService {
       });
       return image;
     }));
-  
-    return this.prismaService.publication.update({
+    const updatedPublication = await this.prismaService.publication.update({
       where: { pubid: pubId },
       data: {
         images: {
@@ -139,18 +86,69 @@ export class PubService {
         },
       },
     });
+    const imageUrls = images.map((image) => `/uploads/images/${image.path}`);
+    return imageUrls;
   }
+
+
+  async updatePublicationImages(pubId: number, fileNames: string[]): Promise<any> {
+    const publication = await this.prismaService.publication.findUnique({ where: { pubid: pubId } });
+    if (!publication) {
+      throw new NotFoundException('Publication not found');
+    }
+    // Supprimer les anciennes images associées à la publication
+    await this.prismaService.image.deleteMany({ where: { publicationId: pubId } });
+    // Créer et associer les nouvelles images à la publication
+    const images = await Promise.all(fileNames.map(async (fileName) => {
+      const image = await this.prismaService.image.create({
+        data: {
+          path: fileName,
+          publication: {
+            connect: {
+              pubid: pubId,
+            },
+          },
+        },
+      });
+      return image;
+    }));
+    // Mettre à jour la publication pour connecter les nouvelles images
+    const updatedPublication = await this.prismaService.publication.update({
+      where: { pubid: pubId },
+      data: {
+        images: {
+          connect: images.map((image) => ({ id: image.id })),
+        },
+      },
+      include: { images: true }, // Inclure les images dans le résultat retourné
+    });
+    return updatedPublication;
+  }
+
+
   async searchPublications(filterDto: PubFilterDto): Promise<Publication[]> {
     const { marque, model, anneeMin, anneeMax, nombrePlace, kilometrageMin, kilometrageMax, prixMin, prixMax, typeCarburant, couleur } = filterDto;
-  
+    const anneeMinInt = anneeMin ? parseInt(anneeMin) : undefined;
+    const anneeMaxInt = anneeMax ? parseInt(anneeMax) : undefined;
+    const nombreplaceInt = nombrePlace ? parseInt(nombrePlace) : undefined;
+    const kilometrageMinInt = kilometrageMin || 0;
+    const kilometrageMaxInt = kilometrageMax ? parseInt(kilometrageMax) : undefined
+    const prixMinInt = prixMin || 0 ;
+    const prixMaxInt = prixMax ? parseInt(prixMax) : undefined;
     const publications = await this.prismaService.publication.findMany({
       where: {
         marque: marque ? { equals: marque } : undefined,
         model: model ? { equals: model } : undefined,
-        anneeFabrication: anneeMin && anneeMax ? { gte: anneeMin, lte: anneeMax } : undefined,
-        nombrePlace: nombrePlace ? { equals: nombrePlace } : undefined,
-        kilometrage: kilometrageMin && kilometrageMax ? { gte: kilometrageMin, lte: kilometrageMax } : undefined,
-        prix: prixMin && prixMax ? { gte: prixMin, lte: prixMax } : undefined,
+        anneeFabrication: anneeMinInt && anneeMaxInt ? between(anneeMinInt, anneeMaxInt) : undefined,
+        nombrePlace: nombrePlace ? { equals: nombreplaceInt } : undefined,
+        kilometrage: {
+          gte:Number(kilometrageMinInt),
+          lte: kilometrageMaxInt,
+        },
+        prix: {
+          gte:Number(prixMinInt),
+          lte: prixMaxInt,
+        },
         typeCarburant: typeCarburant ? { equals: typeCarburant } : undefined,
         couleur: couleur ? { equals: couleur } : undefined,
       },
@@ -161,6 +159,7 @@ export class PubService {
     return publications;
   }
 
+
   async getAllMarques(): Promise<string[]> {
     const brands = await this.prismaService.publication.findMany({
       distinct: ['marque'],
@@ -170,6 +169,8 @@ export class PubService {
     });
     return brands.map((pub) => pub.marque);
   }
+
+
   async getAllModels(): Promise<string[]> {
     const models = await this.prismaService.publication.findMany({
       distinct: ['model'],
@@ -179,6 +180,7 @@ export class PubService {
     });
     return models.map((pub) => pub.model);
   }
+
 
   async getAllColors(): Promise<string[]> {
     const colors = await this.prismaService.publication.findMany({
@@ -190,6 +192,8 @@ export class PubService {
     return
      colors.map((pub) => pub.couleur);
   }
+
+
   async getAllTypesCarburant(): Promise<string[]> {
     const fuelTypes = await this.prismaService.publication.findMany({
       distinct: ['typeCarburant'],
@@ -199,89 +203,60 @@ export class PubService {
     });
     return fuelTypes.map((pub) => pub.typeCarburant);
   }
+
+
   async filterPublications(filterDto: PubFilterDto): Promise<Publication[]> {
     const publications = await this.prismaService.publication.findMany();
-  
     if (filterDto.orderByPrice === 'asc') {
       publications.sort((a, b) => a.prix - b.prix);
     } else if (filterDto.orderByPrice === 'desc') {
       publications.sort((a, b) => b.prix - a.prix);
     }
-  
     if (filterDto.orderByKilometrage === 'asc') {
       publications.sort((a, b) => a.kilometrage - b.kilometrage);
     } else if (filterDto.orderByKilometrage === 'desc') {
       publications.sort((a, b) => b.kilometrage - a.kilometrage);
     }
-  
     return publications;
   }
-  /*async searchPublications(filterDto: PubFilterDto): Promise<Publication[]> {
-   const { marque, model, anneeMin, anneeMax, nombrePlace, kilometrageMin, kilometrageMax, prixMin, prixMax, typeCarburant } = filterDto;
-    
-    const publications = await this.prismaService.publication.findMany({
-      where: {
-        marque: marque ? { equals: marque } : undefined,
-        model: model ? { equals: model } : undefined,
-        anneeFabrication: {
-          gte: anneeMin,
-          lte: anneeMax,
-        },
-        nombrePlace: nombrePlace ? { equals: nombrePlace } : undefined,
-        kilometrage: {
-          gte: kilometrageMin,
-          lte: kilometrageMax,
-        },
-        prix: {
-          gte: prixMin,
-          lte: prixMax,
-        },
-        typeCarburant: typeCarburant ? { equals: typeCarburant } : undefined,
-      },
-    });
+  
 
-    return publications;
-  }*/
-  /*async associateImagesToPublication(pubId: number, imagePaths: string[]): Promise<void> {
-    // Recherche de la publication associée à l'utilisateur
-    const existingPublication = await this.prismaService.publication.findUnique({ where: { pubid: pubId} });
-
-    // Vérifier si la publication existe
-    if (!existingPublication) {
-        throw new NotFoundException('Publication non trouvée');
-    }
-
-   const imageIds: number[] = imagePaths.map(path => parseInt(path, 10));
-
-    await this.prismaService.publication.update({
-      where: { pubid : pubId  },
-      data: {  images: {
-        connect: imageIds.map(imageId => ({ id: imageId })),
-      } }
-  });
-}*/
-
-  /*async associateImagesToPublication(userId: number, imagePaths: string[]): Promise<void> { 
-    const existingPublication = await this.prismaService.publication.findFirst({ where: { userId: userId } });
-    if (!existingPublication) {
-        throw new NotFoundException('Publication non trouvée');
-    }
-   const imageIds: number[] = imagePaths.map(path => parseInt(path, 10));
-    await this.prismaService.publication.update({
-      where: { pubid : existingPublication.pubid  },
-      data: {  images: {
-        set: imageIds.map(id => ({ id }))
-      } }
-  });
-}*/
-  async delete(pubid: number, userId: number) {
+  /*async delete(pubid: number, userId: number) {
     const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
     if (!publication) throw new NotFoundException("Publication not found")
     // vérification de l'utilisateur qui essaie de supprimer la publication
     if (publication.userId != userId) throw new ForbiddenException("Forbidden action")
     await this.prismaService.publication.delete({ where: { pubid } })
     return { data: "Publication supprimée" }
+  }*/
+
+
+  async deleteWithImages(pubid: number, userId: number) {
+    const publication = await this.prismaService.publication.findUnique({
+      where: { pubid },
+    });
+    if (!publication) {
+      throw new NotFoundException("Publication not found");
+    }
+    // verification of the user who is trying to delete the publication
+    if (publication.userId != userId) {
+      throw new ForbiddenException("Forbidden action");
+    }
+    // delete all images associated with the publication
+    await this.prismaService.publication.update({
+      where: { pubid },
+      data: {
+        images: {
+          deleteMany: {},
+        },
+      },
+    });
+    // delete the publication
+    await this.prismaService.publication.delete({ where: { pubid } });
+    return { data: "Publication and associated images deleted" };
   }
+
+
   async update(pubid: number, userId: any, updatePubDto: UpdatePubDto) {
     const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
     if (!publication) throw new NotFoundException("Publication not found")
@@ -289,6 +264,56 @@ export class PubService {
     await this.prismaService.publication.update({ where: { pubid }, data: { ...updatePubDto } })
     return { data: "Publication modifiée !" }
   }
+
+
+  async getPublicationImages(publicationId: number): Promise<string[]> {
+    const images = await this.prismaService.image.findMany({
+      where: {
+        publicationId: publicationId,
+      },
+      select: {
+        path: true,
+      },
+    });
+  
+    return images.map((image) => image.path);
+  }
+
+//ADD to favoris
+async addToFavorites(userId: number, publicationId: number) {
+  return this.prismaService.publicationFavorite.create({
+    data: {
+      userId,
+      publicationId,
+    },
+  });
+}
+
+
+async getFavorites(userId: number) {
+  return this.prismaService.publicationFavorite.findMany({
+    where: { userId },
+    include: { publication: true },
+  });
+}
+
+
+async removeFromFavorites(userId: number, publicationId: number) {
+  return this.prismaService.publicationFavorite.deleteMany({
+    where: {
+      AND: [
+        { userId: userId },
+        { publicationId: publicationId }
+      ]
+    }
+  });
+}
+
+
+
+
+
+
 
 }
 
