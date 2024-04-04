@@ -2,8 +2,11 @@ import { Controller, Param, ParseIntPipe } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Query, BadRequestException } from '@nestjs/common';
-import { Publication, TypeCarburant, User } from '@prisma/client';
-
+import { Publication, TypeCarburant } from '@prisma/client';
+import { Request } from 'express';
+import { User } from '@prisma/client';
+import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
+import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -80,6 +83,26 @@ export class AdminController {
       totalPublications,
     };
   }
+
+  @UseGuards(AdminGuard)
+  @Post("Subscription")
+  async createSubscription(
+    @Body()createSubscriptionDto : CreateSubscriptionDto ,
+    @Req() request: Request
+  ) {
+    const userId = request.user["id"]
+    return this.adminService.createSubscription(createSubscriptionDto,userId);
+  }
+  
+  @UseGuards(AdminGuard)
+  @Put("updateSub/:id")
+  updateSub(@Param("id", ParseIntPipe) ids: number,
+  @Body() updateSubscriptionDto: UpdateSubscriptionDto,
+  @Req() request: Request) {
+  const userId = request.user["id"]
+  return this.adminService.updateSub(ids, userId, updateSubscriptionDto)
+}
+
 
 
 }

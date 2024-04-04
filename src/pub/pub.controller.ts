@@ -62,7 +62,7 @@ export class PubController {
     return this.pubService.getAll()
   }
 
-  //GET IMAGESPAR ID
+  //bch taffichi IMAGESPAR ID
   @Get(':id/images')
   async getPublicationImages(@Param('id', ParseIntPipe) id: number) {
     return this.pubService.getPublicationImages(id);

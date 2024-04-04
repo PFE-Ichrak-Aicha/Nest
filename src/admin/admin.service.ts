@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Publication, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
+import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 //import { PublicationWhereInput } from '@prisma/client';
 
 
@@ -163,4 +165,35 @@ export class AdminService {
     const totalPublications = await this.prismaService.publication.count();
     return totalPublications;
   }
+
+
+  async createSubscription(createSubscriptionDto : CreateSubscriptionDto,userId : number) {
+    const {name,duration,price,description }= createSubscriptionDto;
+    
+    await this.prismaService.subscription.create({
+      data: {
+        name,
+        duration,
+        price,
+        description,
+        userId
+      },
+    });
+    return{ data : "Abonnement crée"}
+  }
+
+  async updateSub(ids : number, userId : any, updateSubscriptionDto : UpdateSubscriptionDto){
+  const subscription = await this.prismaService.subscription.findUnique({where:{ids}});
+  if (!subscription) throw new NotFoundException("subscription not found")
+  await this.prismaService.subscription.update({where: {ids}, data: { ...updateSubscriptionDto}})
+return { data: "Abonnement modifié"}
+}
+
+async deleteSub(ids : number , userId: number){
+  const subscription = await this.prismaService.subscription.findUnique({where:{ids}});
+  if (!subscription) throw new NotFoundException("subscription not found")
+  if (subscription.userId != userId) throw new ForbiddenException("Forbidden action")
+  await this.prismaService.subscription.delete({ where: { ids } })
+52953081
+}
 }

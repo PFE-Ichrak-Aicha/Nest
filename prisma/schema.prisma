@@ -29,6 +29,7 @@ model User {
   resetCode    String?
   publications Publication[]         @relation("user_publications")
   favorites    PublicationFavorite[]
+  subscriptions Subscription[]
 }
 
 model Publication {
@@ -85,4 +86,18 @@ model PublicationFavorite {
   idpf Int @id @default(autoincrement())
   user        User        @relation(fields: [userId], references: [id])
   publication Publication @relation(fields: [publicationId], references: [pubid])
+}
+model Subscription {
+  ids        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign key to the User model
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+
+  name      String
+  price     Float
+  duration  Int
+  description String
 }
