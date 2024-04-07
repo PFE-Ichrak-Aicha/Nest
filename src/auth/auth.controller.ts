@@ -28,7 +28,7 @@ export class AuthController {
   }
   @Post("connexionAdmin")
   connexionAdmin(@Body() connexionDto: connexionDto) {
-    return this.authService.connexion(connexionDto)
+    return this.authService.connexionAdmin(connexionDto)
   }
   @Post('reset-pass-demand')
   async resetPassDemand(@Body() resetPassDemandDto: ResetPasseDemandDto, @Res() res: Response) {

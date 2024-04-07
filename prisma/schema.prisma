@@ -15,21 +15,29 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  Nom          String                @db.VarChar(80)
-  Prenom       String                @db.VarChar(80)
-  NumTel       String                @db.VarChar(8)
-  Adresse      String
-  email        String                @unique @db.VarChar(80)
-  MotDePasse   String                @db.VarChar(80)
-  Ville        String
-  CodePostal   String?
-  PhotoProfil  String?
-  isAdmin      Boolean               @default(false)
+  Nom           String                @db.VarChar(80)
+  Prenom        String                @db.VarChar(80)
+  NumTel        String                @db.VarChar(8)
+  Adresse       String
+  email         String                @unique @db.VarChar(80)
+  MotDePasse    String                @db.VarChar(80)
+  Ville         String
+  CodePostal    String?
+  PhotoProfil   String?
+  isAdmin       Boolean               @default(false)
   //MotDePasseConfirmation String        @db.VarChar(80)
-  resetCode    String?
-  publications Publication[]         @relation("user_publications")
-  favorites    PublicationFavorite[]
-  subscriptions Subscription[]
+  resetCode     String?
+  publications  Publication[]         @relation("user_publications")
+  favorites     PublicationFavorite[]
+  //subscriptions Subscription[]
+}
+
+model Admin {
+  ida         Int     @id @default(autoincrement())
+  email       String  @unique @db.VarChar(80)
+  MotDePasse  String  @db.VarChar(80)
+  PhotoProfil String?
+  isAdmin       Boolean               @default(true)
 }
 
 model Publication {
@@ -83,21 +91,22 @@ model Image {
 model PublicationFavorite {
   userId        Int
   publicationId Int
-  idpf Int @id @default(autoincrement())
-  user        User        @relation(fields: [userId], references: [id])
-  publication Publication @relation(fields: [publicationId], references: [pubid])
+  idpf          Int         @id @default(autoincrement())
+  user          User        @relation(fields: [userId], references: [id])
+  publication   Publication @relation(fields: [publicationId], references: [pubid])
 }
+
 model Subscription {
-  ids        Int      @id @default(autoincrement())
+  ids       Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Foreign key to the User model
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  //userId Int
+  //user   User @relation(fields: [userId], references: [id])
 
-  name      String
-  price     Float
-  duration  Int
+  name        String
+  price       Float
+  duration    Int
   description String
 }

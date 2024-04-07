@@ -1,11 +1,11 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Publication, User } from '@prisma/client';
+import { Publication, Subscription, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 //import { PublicationWhereInput } from '@prisma/client';
-
+//import { UserCreateNestedOneWithoutSubscriptionsInput } from '@generated/type-graphql';
 
 
 interface SearchPublicationsOptions {
@@ -29,6 +29,11 @@ enum TypeCarburant {
 @Injectable()
 export class AdminService {
   constructor(private readonly prismaService: PrismaService,) { }
+
+  async isAdmin(user: any): Promise<boolean> {
+    const admin = await this.prismaService.admin.findUnique({ where: { email: user.email } });
+    return admin !== undefined;
+  }
   async getUsers(): Promise<Partial<User>[]> {
     const users = await this.prismaService.user.findMany({
       select: {
@@ -127,7 +132,7 @@ export class AdminService {
 
 
 
-  async getUserById(userId: number): Promise<{ Nom: string, Prenom: string , email: string, NumTel: string, Ville :string,Adresse : string, PhotoProfil:string}> {
+  async getUserById(userId: number): Promise<{ Nom: string, Prenom: string, email: string, NumTel: string, Ville: string, Adresse: string, PhotoProfil: string }> {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
       select: {
@@ -140,14 +145,14 @@ export class AdminService {
         PhotoProfil: true
       },
     });
-  
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
-  
+
     return user;
   }
-  
+
 
 
   async getAdminDashboard(): Promise<User[]> {
@@ -166,34 +171,60 @@ export class AdminService {
     return totalPublications;
   }
 
+  async createSubscription(createSubscriptionDto: CreateSubscriptionDto) {
+    const { name, duration, price, description } = createSubscriptionDto;
 
-  async createSubscription(createSubscriptionDto : CreateSubscriptionDto,userId : number) {
-    const {name,duration,price,description }= createSubscriptionDto;
-    
     await this.prismaService.subscription.create({
       data: {
         name,
         duration,
         price,
         description,
-        userId
+
       },
     });
-    return{ data : "Abonnement crée"}
+    return { data: "Abonnement crée" }
   }
 
-  async updateSub(ids : number, userId : any, updateSubscriptionDto : UpdateSubscriptionDto){
-  const subscription = await this.prismaService.subscription.findUnique({where:{ids}});
-  if (!subscription) throw new NotFoundException("subscription not found")
-  await this.prismaService.subscription.update({where: {ids}, data: { ...updateSubscriptionDto}})
-return { data: "Abonnement modifié"}
-}
+  async getAllSubscriptions(): Promise<Partial<Subscription>[]> {
+    const Subscriptions = await this.prismaService.subscription.findMany({
+      select: {
+        ids: true,
+        name: true,
+        price: true,
+        duration: true,
+        description: true,
+      }
+    });
+    return Subscriptions;
+  }
 
-async deleteSub(ids : number , userId: number){
-  const subscription = await this.prismaService.subscription.findUnique({where:{ids}});
-  if (!subscription) throw new NotFoundException("subscription not found")
-  if (subscription.userId != userId) throw new ForbiddenException("Forbidden action")
-  await this.prismaService.subscription.delete({ where: { ids } })
-52953081
-}
+  async getSubscriptionById(id: number) {
+    return this.prismaService.subscription.findUnique({
+      where: { ids: id },
+    });
+  }
+
+
+  async updateSub(ids: number, updateSubscriptionDto: UpdateSubscriptionDto) {
+    const subscription = await this.prismaService.subscription.findUnique({ where: { ids } });
+    if (!subscription) throw new NotFoundException("subscription not found")
+    await this.prismaService.subscription.update({ where: { ids }, data: { ...updateSubscriptionDto } })
+    return { data: "Abonnement modifié" }
+  }
+
+  async deleteSubscription(id: number) {
+    await this.prismaService.subscription.delete({
+      where: { ids: id },
+    })
+    return { data: "Subscription deleted" };
+  }
+
+  /*async deleteSub(ids : number , userId: number){
+    const subscription = await this.prismaService.subscription.findUnique({where:{ids}});
+    if (!subscription) throw new NotFoundException("subscription not found")
+    if (subscription.userId != userId) throw new ForbiddenException("Forbidden action")
+    await this.prismaService.subscription.delete({ where: { ids } })
+  52953081
+  }*/
 }

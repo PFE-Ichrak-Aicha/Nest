@@ -95,21 +95,21 @@ export class AuthService {
     async connexionAdmin(connexionDto: connexionDto) {
         const { email, MotDePasse } = connexionDto;
         // Recherche de l'utilisateur dans la base de données
-        const user = await this.prismaService.user.findUnique({ where: { email} });
-        if (!user || !user.isAdmin) { // Vérifier si l'utilisateur est administrateur
+        const admin = await this.prismaService.admin.findUnique({ where: { email} });
+        if (!admin || !admin.isAdmin) { // Vérifier si l'utilisateur est administrateur
             throw new ForbiddenException('Only administrators can access this endpoint');
           }
         // Vérification du mot de passe
-        const match = await bcrypt.compare(MotDePasse, user.MotDePasse);
+        const match = await bcrypt.compare(MotDePasse, admin.MotDePasse);
         if (!match) {
             throw new ForbiddenException("Incorrect password");
         }
 
         // Génération du token JWT
         const payload = {
-            sub: user.id,
-            email: user.email,
-            isAdmin: user.isAdmin,
+            sub: admin.ida,
+            email: admin.email,
+            isAdmin: admin.isAdmin,
     
         };
         const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
@@ -117,9 +117,9 @@ export class AuthService {
         // Retour de la réponse avec le token JWT et les informations de l'utilisateur
         return {
             token,
-            user: {
-                id: user.id, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
-                email: user.email
+            admin: {
+                id: admin.ida, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
+                email: admin.email
             }
         };
     }

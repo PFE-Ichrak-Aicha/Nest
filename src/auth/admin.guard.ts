@@ -1,31 +1,26 @@
 // admin.guard.ts
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminService } from 'src/admin/admin.service';
 
-/*@Injectable()
-export class AdminGuard extends AuthGuard('jwt') implements CanActivate {
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
 
-    // Vérifiez si l'utilisateur est un administrateur
-    if (user && user.isAdmin) {
-      return true; // L'utilisateur est un administrateur
-    }
-
-    return false; // L'utilisateur n'est pas un administrateur
-  }
-}*/
 @Injectable()
 export class AdminGuard extends AuthGuard('jwt') {
-  canActivate(context: ExecutionContext) {
-    return super.canActivate(context);
+  constructor(private adminService: AdminService) {
+    super();
   }
 
-  handleRequest(err, user, info) {
-    if (err || !user || !user.isAdmin) {
-      throw new UnauthorizedException();
+  handleRequest(err, user, info, context) {
+    if (err ||!user) {
+      return false;
     }
+
+    const isAdmin = this.adminService.isAdmin(user);
+
+    if (!isAdmin) {
+      return false;
+    }
+
     return user;
   }
 }
