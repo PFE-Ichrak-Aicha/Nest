@@ -113,7 +113,7 @@ export class PubController {
 
   //Get PUB PAR ID
   @Get(':pubid')
-  @UseGuards(AuthGuard('jwt'))
+  //@UseGuards(AuthGuard('jwt'))
   async getPublicationById(@Param('pubid', ParseIntPipe) pubId: number) {
     return this.pubService.getPubById(pubId);
   }
@@ -230,6 +230,14 @@ export class PubController {
 
     return this.pubService.removeFromFavorites(userId, publicationId);
   }
+
+  //Bcht chouf tous les pubs d'un utilisateur
+  @UseGuards(AuthGuard('jwt'))
+  @Get("user/:userId")
+  async getUserPublications(@Param('userId', ParseIntPipe) userId: number) {
+    return this.pubService.getUserPublications(userId);
+  }
+
 
 }
 
