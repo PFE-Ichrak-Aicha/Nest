@@ -311,7 +311,10 @@ async removeFromFavorites(userId: number, publicationId: number) {
 
 async getUserPublications(userId: number): Promise<Publication[]> {
   const publications = await this.prismaService.publication.findMany({
-    where: { userId: userId }, // assuming there's a userId field in your Publication model
+    where: { userId: userId },
+    orderBy: {
+      updatedAt: Prisma.SortOrder.desc // Or updatedAt, depending on your requirements
+    } // assuming there's a userId field in your Publication model
   });
   if (!publications) throw new NotFoundException("Publications not found");
   return publications;

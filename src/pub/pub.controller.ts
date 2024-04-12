@@ -232,7 +232,7 @@ export class PubController {
   }
 
   //Bcht chouf tous les pubs d'un utilisateur
-  @UseGuards(AuthGuard('jwt'))
+ // @UseGuards(AuthGuard('jwt'))
   @Get("user/:userId")
   async getUserPublications(@Param('userId', ParseIntPipe) userId: number) {
     return this.pubService.getUserPublications(userId);
