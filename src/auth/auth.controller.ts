@@ -22,14 +22,17 @@ export class AuthController {
   inscription(@Body() inscriptionDto: InscriptionDto) {
     return this.authService.inscription(inscriptionDto)
   }
+  
   @Post("connexion")
   connexion(@Body() connexionDto: connexionDto) {
     return this.authService.connexion(connexionDto)
   }
+
   @Post("connexionAdmin")
   connexionAdmin(@Body() connexionDto: connexionDto) {
     return this.authService.connexionAdmin(connexionDto)
   }
+
   @Post('reset-pass-demand')
   async resetPassDemand(@Body() resetPassDemandDto: ResetPasseDemandDto, @Res() res: Response) {
     try {
@@ -57,15 +60,6 @@ async validateResetCode(@Body() validatePassCodeDto: ValidatePassCodeDto, @Res()
 }
 }
 
-/*@Post('reset-pass-confirmation')
-async resetPassConfirmation(@Body() resetPassConfirmationDto: ResetPasseConfirmationDto, @Res() res: Response) {
-  try {
-    await this.authService.resetPassConfirmation(resetPassConfirmationDto.MotDePasseN,resetPassConfirmationDto.email);
-    return res.status(200).json({ message: 'Password reset successful' });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-}*/
 @Post('reset-pass-confirmation')
 async resetPassConfirmation(@Body() resetPassConfirmationDto: ResetPasseConfirmationDto, @Req() req: Request, @Res() res: Response) {
   try {
@@ -88,6 +82,7 @@ async resetPassConfirmation(@Body() resetPassConfirmationDto: ResetPasseConfirma
       return res.status(401).json({ message: error.message });
     }
   }
+  
 
   @Post('reset-pass-confirmation')
   async resetPassConfirmation(@Body() resetPassConfirmationDto: ResetPasseConfirmationDto, @Res() res: Response) {
@@ -157,5 +152,14 @@ async resetPassConfirmation(@Body() resetPassConfirmationDto: ResetPasseConfirma
        const userId = request.user["id"]
        return this.authService.update( userId , updateAccountDto)
    }*/
+   /*@Post('reset-pass-confirmation')
+async resetPassConfirmation(@Body() resetPassConfirmationDto: ResetPasseConfirmationDto, @Res() res: Response) {
+  try {
+    await this.authService.resetPassConfirmation(resetPassConfirmationDto.MotDePasseN,resetPassConfirmationDto.email);
+    return res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}*/
 
 }

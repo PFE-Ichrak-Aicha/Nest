@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Res } from '@nestjs/common';
 import { Publication } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
@@ -7,8 +7,12 @@ import { Prisma } from '@prisma/client';
 import { Image } from '@prisma/client';
 import { PubFilterDto } from 'dto/pubFilterDto';
 import { publicationStorage } from './pub.controller';
+import { join } from 'path';
 
-const between = (start:  number, end: number) => ({
+import { Response } from 'express'
+import { createReadStream } from 'fs';
+
+const between = (start: number, end: number) => ({
   gte: start,
   lte: end,
 });
@@ -133,7 +137,7 @@ export class PubService {
     const nombreplaceInt = nombrePlace ? parseInt(nombrePlace) : undefined;
     const kilometrageMinInt = kilometrageMin || 0;
     const kilometrageMaxInt = kilometrageMax ? parseInt(kilometrageMax) : undefined
-    const prixMinInt = prixMin || 0 ;
+    const prixMinInt = prixMin || 0;
     const prixMaxInt = prixMax ? parseInt(prixMax) : undefined;
     const publications = await this.prismaService.publication.findMany({
       where: {
@@ -142,11 +146,11 @@ export class PubService {
         anneeFabrication: anneeMinInt && anneeMaxInt ? between(anneeMinInt, anneeMaxInt) : undefined,
         nombrePlace: nombrePlace ? { equals: nombreplaceInt } : undefined,
         kilometrage: {
-          gte:Number(kilometrageMinInt),
+          gte: Number(kilometrageMinInt),
           lte: kilometrageMaxInt,
         },
         prix: {
-          gte:Number(prixMinInt),
+          gte: Number(prixMinInt),
           lte: prixMaxInt,
         },
         typeCarburant: typeCarburant ? { equals: typeCarburant } : undefined,
@@ -190,7 +194,7 @@ export class PubService {
       },
     });
     return
-     colors.map((pub) => pub.couleur);
+    colors.map((pub) => pub.couleur);
   }
 
 
@@ -219,7 +223,7 @@ export class PubService {
     }
     return publications;
   }
-  
+
 
   /*async delete(pubid: number, userId: number) {
     const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
@@ -266,7 +270,7 @@ export class PubService {
   }
 
 
-  async getPublicationImages(publicationId: number): Promise<string[]> {
+  async getPublicationImages(publicationId: number, @Res() res: Response) {
     const images = await this.prismaService.image.findMany({
       where: {
         publicationId: publicationId,
@@ -275,50 +279,67 @@ export class PubService {
         path: true,
       },
     });
-  
-    return images.map((image) => image.path);
+
+
+
+    let imagesPath: any[] = [];
+    images.forEach(item => {
+      const imagePath = join("C://Users/ichra/flesk-car-nest", '..', 'uploads', 'images', item.path);
+      const x = {
+        path: imagePath
+      }
+      imagesPath.push(x)
+    });
+
+
+
+
+
+    return res.status(200).json({ data: imagesPath });
+
+
   }
 
-//ADD to favoris
-async addToFavorites(userId: number, publicationId: number) {
-  return this.prismaService.publicationFavorite.create({
-    data: {
-      userId,
-      publicationId,
-    },
-  });
-}
+  //ADD to favoris
+  async addToFavorites(userId: number, publicationId: number) {
+    return this.prismaService.publicationFavorite.create({
+      data: {
+        userId,
+        publicationId,
+      },
+    });
+  }
 
 
-async getFavorites(userId: number) {
-  return this.prismaService.publicationFavorite.findMany({
-    where: { userId },
-    include: { publication: true },
-  });
-}
+  async getFavorites(userId: number) {
+    return this.prismaService.publicationFavorite.findMany({
+      where: { userId },
+      include: { publication: true },
+    });
+  }
 
 
-async removeFromFavorites(userId: number, publicationId: number) {
-  return this.prismaService.publicationFavorite.deleteMany({
-    where: {
-      AND: [
-        { userId: userId },
-        { publicationId: publicationId }
-      ]
-    }
-  });
-}
+  async removeFromFavorites(userId: number, publicationId: number) {
+    return this.prismaService.publicationFavorite.deleteMany({
+      where: {
+        AND: [
+          { userId: userId },
+          { publicationId: publicationId }
+        ]
+      }
+    });
+  }
 
-async getUserPublications(userId: number): Promise<Publication[]> {
-  const publications = await this.prismaService.publication.findMany({
-    where: { userId: userId },
-    orderBy: {
-      updatedAt: Prisma.SortOrder.desc // Or updatedAt, depending on your requirements
-    } // assuming there's a userId field in your Publication model
-  });
-  if (!publications) throw new NotFoundException("Publications not found");
-  return publications;
-}
+  async getUserPublications(userId: number): Promise<Publication[]> {
+    const publications = await this.prismaService.publication.findMany({
+      where: { userId: userId },
+      orderBy: {
+        updatedAt: Prisma.SortOrder.desc // Or updatedAt, depending on your requirements
+      } // assuming there's a userId field in your Publication model
+    });
+    if (!publications) throw new NotFoundException("Publications not found");
+    return publications;
+  }
 
 
 

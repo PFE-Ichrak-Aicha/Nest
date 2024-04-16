@@ -11,6 +11,7 @@ import { Publication } from '@prisma/client';
 import * as multer from 'multer';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PubFilterDto } from 'dto/pubFilterDto';
+import { Response } from 'express';
 
 export const publicationStorage = {
   imageStorage: multer.diskStorage({
@@ -62,10 +63,14 @@ export class PubController {
     return this.pubService.getAll()
   }
 
-  //bch taffichi IMAGESPAR ID
+  //bch taffichi IMAGESPAR ID de pub
   @Get(':id/images')
-  async getPublicationImages(@Param('id', ParseIntPipe) id: number) {
-    return this.pubService.getPublicationImages(id);
+  async getPublicationImages(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    let result = this.pubService.getPublicationImages(id, res);
+
+    return result;
+
+
   }
 
   //FILTRER
@@ -137,7 +142,7 @@ export class PubController {
   }))
   async uploadFiles(@UploadedFiles() files: Array<Express.Multer.File>, @Param('pubId', ParseIntPipe) pubId: number) {
     try {
-      console.log(files);
+      console.log("debugin.............", typeof files);
       if (!files || files.length === 0) {
         console.log(files);
       }
@@ -214,6 +219,7 @@ export class PubController {
 
     return this.pubService.addToFavorites(userId, publicationId);
   }
+
   //Bch tchouf biha liste de favoris mta3k
   @UseGuards(AuthGuard('jwt'))
   @Get(':id/favoris')
@@ -222,6 +228,7 @@ export class PubController {
 
     return this.pubService.getFavorites(userId);
   }
+
   //tnajem tfasa5 favoris mn liste
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id/remove-favoris')
@@ -232,7 +239,7 @@ export class PubController {
   }
 
   //Bcht chouf tous les pubs d'un utilisateur
- // @UseGuards(AuthGuard('jwt'))
+  // @UseGuards(AuthGuard('jwt'))
   @Get("user/:userId")
   async getUserPublications(@Param('userId', ParseIntPipe) userId: number) {
     return this.pubService.getUserPublications(userId);
