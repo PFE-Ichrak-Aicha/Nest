@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
@@ -9,6 +9,9 @@ type Payload = {
 }
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+    canActivate(context: ExecutionContext): boolean | Promise<boolean> {
+        throw new Error('Method not implemented.');
+    }
     constructor(configService: ConfigService, private readonly prismaService: PrismaService) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -24,4 +27,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         console.log(user)
         return user
     }
+
+  /*async validate(payload: Payload, req: Request) {
+    const user = await this.prismaService.user.findUnique({
+      where: { email: payload.email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    const admin = await this.prismaService.admin.findUnique({
+      where: { email: payload.email },
+    });
+
+    if (!admin || !admin.isAdmin) {
+      throw new UnauthorizedException();
+    }
+
+    // add the user object to the request object
+    req['user'] = user;
+
+    return user;
+  }*/
 }

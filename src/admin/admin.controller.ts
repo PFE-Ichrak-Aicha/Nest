@@ -1,12 +1,15 @@
-import { Controller, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Param, ParseIntPipe, UnauthorizedException } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Query, BadRequestException } from '@nestjs/common';
 import { Publication, Subscription, TypeCarburant } from '@prisma/client';
-import { Request } from 'express';
+import { Request as ExpressRequest, Response, NextFunction, request } from 'express';
 import { User } from '@prisma/client';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
+import { UpdateAccountDto } from 'dto/updateAccountDto';
+import { Admin } from '@prisma/client';
+import { Request } from 'express';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -17,7 +20,11 @@ interface SearchPublicationsOptions {
   prix?: number;
   typeCarburant?: TypeCarburant;
 }
-
+interface AdminRequest extends Request {
+  admin?: {
+    ida: string;
+  };
+}
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) { }
@@ -122,6 +129,25 @@ async deleteSubscription(@Param('ids', ParseIntPipe) id: number) {
   return this.adminService.deleteSubscription(id);
 }
 
-
+/*@Put("update-account")
+update(@Req() request: Request  & { admin: { ida: number } },
+    @Body() updateAccountDto: UpdateAccountDto,
+) {
+    const adminId = request.admin.ida
+    return this.adminService.updateAccount(adminId, updateAccountDto)
+}*/
+//mch sur te5dem
+@UseGuards(AdminGuard)
+@Put('updateAdmin')
+async updateAdmin(@Req() request: AdminRequest, @Body() updateAccountDto: UpdateAccountDto) {
+  if (!request.admin) {
+    throw new UnauthorizedException();
+  }
+  const adminId = parseInt(request.admin["ida"]);
+  if (isNaN(adminId)) {
+    throw new Error("Invalid admin ID");
+  }
+  return this.adminService.updateAdmin(adminId, updateAccountDto);
+}
 
 }

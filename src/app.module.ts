@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from "@nestjs/config"
@@ -10,7 +10,9 @@ import { UserModule } from './user/user.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
+import { ExpertModule } from './expert/expert.module';
 import * as cors from 'cors';
+
 @Module({
   imports: [AuthModule, PrismaModule, ConfigModule.forRoot({ isGlobal: true }), MailerModule , PassportModule , JwtModule, PubModule, UserModule,
     MulterModule.register({
@@ -18,7 +20,8 @@ import * as cors from 'cors';
 
   }),
     MediaModule,
-    AdminModule,]
+    AdminModule,
+    ExpertModule,],
+  providers: []
 })
 export class AppModule {}
- 

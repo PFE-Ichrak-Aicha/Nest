@@ -1,12 +1,13 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Publication, Subscription, User } from '@prisma/client';
+import { Admin, Publication, Subscription, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
+import { UpdateAccountDto } from 'dto/updateAccountDto';
 //import { PublicationWhereInput } from '@prisma/client';
 //import { UserCreateNestedOneWithoutSubscriptionsInput } from '@generated/type-graphql';
-
+import * as bcrypt from 'bcrypt';
 
 interface SearchPublicationsOptions {
   query?: string;
@@ -155,13 +156,13 @@ export class AdminService {
 
 
 
-  async getAdminDashboard(): Promise<User[]> {
+ /* async getAdminDashboard(): Promise<User[]> {
     return this.prismaService.user.findMany({
       where: {
         isAdmin: true,
       },
     });
-  }
+  }*/
   async getTotalUsers(): Promise<number> {
     const totalUsers = await this.prismaService.user.count();
     return totalUsers;
@@ -219,7 +220,27 @@ export class AdminService {
     })
     return { data: "Subscription deleted" };
   }
+  async updateAccount(adminId: number, updateAccountDto: UpdateAccountDto) {
+    const user = await this.prismaService.admin.findUnique({ where: { ida: adminId } })
+    if (!user) throw new NotFoundException('User not found')
+    let updateAccount: Admin
+    if (updateAccountDto.MotDePasse) {
+      const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
+      updateAccount = await this.prismaService.admin.update({
+        where: { ida: adminId },
+        data: { ...updateAccountDto, MotDePasse: hash },
+      });
+    }
+    else {
+      // Si le mot de passe n'est pas fourni, mettez à jour les autres champs sans toucher au mot de passe
+      updateAccount = await this.prismaService.admin.update({
+        where: { ida: adminId },
+        data: { ...updateAccountDto },
+      });
+    }
+    return { message: 'Compte utilisateur mis à jour avec succès.' };
 
+  }
   /*async deleteSub(ids : number , userId: number){
     const subscription = await this.prismaService.subscription.findUnique({where:{ids}});
     if (!subscription) throw new NotFoundException("subscription not found")
@@ -227,4 +248,40 @@ export class AdminService {
     await this.prismaService.subscription.delete({ where: { ids } })
   52953081
   }*/
+  async updateAdmin(adminId: number, updateAccountDto: UpdateAccountDto) {
+   // const adminIdAsNumber = parseInt(adminId, 10);
+    // Vérifie si l'administrateur existe
+    const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId  } });
+    if (!admin) {
+      throw new NotFoundException('Admin not found');
+    }
+    let updateAccount: Admin
+    if (updateAccountDto.MotDePasse) {
+      const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
+      updateAccount = await this.prismaService.admin.update({
+        where: { ida: adminId },
+        data: { ...updateAccountDto, MotDePasse: hash },
+      });
+    }
+    else {
+      // Si le mot de passe n'est pas fourni, mettez à jour les autres champs sans toucher au mot de passe
+      updateAccount = await this.prismaService.admin.update({
+        where: { ida: adminId },
+        data: { ...updateAccountDto },
+      });
+    }
+    return { message: 'Compte utilisateur mis à jour avec succès.' };
+
+  }
+  
+
+  async getUserId(userId: number): Promise<Admin> {
+    return this.prismaService.admin.findUnique({
+      where: { ida: userId },
+    });
+  }
+
+  isAdminn(user: any): boolean {
+    return user.isAdmin;
+  }
 }
