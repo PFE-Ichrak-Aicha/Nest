@@ -25,6 +25,7 @@ interface AdminRequest extends Request {
     ida: string;
   };
 }
+@UseGuards(AdminGuard)
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) { }
@@ -70,11 +71,11 @@ export class AdminController {
   async getPublicationById(@Param('pubid', ParseIntPipe) pubId: number) {
     return this.adminService.getPubById(pubId);
   }
-  
+
   @UseGuards(AdminGuard)
   @Get('users/:id')
   async getUsrById(@Param('id', ParseIntPipe) userId: number) {
-      return this.adminService.getUserById(userId);
+    return this.adminService.getUserById(userId);
   }
 
 
@@ -94,60 +95,60 @@ export class AdminController {
   @UseGuards(AdminGuard)
   @Post("Subscription")
   async createSubscription(
-    @Body()createSubscriptionDto : CreateSubscriptionDto 
+    @Body() createSubscriptionDto: CreateSubscriptionDto
   ) {
     //const userId = request.user["id"]
     return this.adminService.createSubscription(createSubscriptionDto);
   }
 
-//mochkla
+  //mochkla
   @UseGuards(AdminGuard)
   @Get("subscriptions")
-  async getAllSubscriptions() : Promise <Partial<Subscription>[] >{
+  async getAllSubscriptions(): Promise<Partial<Subscription>[]> {
     const Subscriptions = await this.adminService.getAllSubscriptions();
     return Subscriptions
   }
 
- @UseGuards(AdminGuard)
+  @UseGuards(AdminGuard)
   @Get('subscription/:ids')
-async getSubscriptionById(@Param('ids', ParseIntPipe) id: number) {
-  return this.adminService.getSubscriptionById(id);
-}
-  
+  async getSubscriptionById(@Param('ids', ParseIntPipe) id: number) {
+    return this.adminService.getSubscriptionById(id);
+  }
+
 
   @UseGuards(AdminGuard)
   @Put("updateSub/:ids")
   updateSub(@Param("ids", ParseIntPipe) ids: number,
-  @Body() updateSubscriptionDto: UpdateSubscriptionDto,) {
-  return this.adminService.updateSub(ids, updateSubscriptionDto)
-}
-
-
- @UseGuards(AdminGuard)
-@Delete('deleteSub/:ids')
-async deleteSubscription(@Param('ids', ParseIntPipe) id: number) {
-  return this.adminService.deleteSubscription(id);
-}
-
-/*@Put("update-account")
-update(@Req() request: Request  & { admin: { ida: number } },
-    @Body() updateAccountDto: UpdateAccountDto,
-) {
-    const adminId = request.admin.ida
-    return this.adminService.updateAccount(adminId, updateAccountDto)
-}*/
-//mch sur te5dem
-@UseGuards(AdminGuard)
-@Put('updateAdmin')
-async updateAdmin(@Req() request: AdminRequest, @Body() updateAccountDto: UpdateAccountDto) {
-  if (!request.admin) {
-    throw new UnauthorizedException();
+    @Body() updateSubscriptionDto: UpdateSubscriptionDto,) {
+    return this.adminService.updateSub(ids, updateSubscriptionDto)
   }
-  const adminId = parseInt(request.admin["ida"]);
-  if (isNaN(adminId)) {
-    throw new Error("Invalid admin ID");
+
+
+  @UseGuards(AdminGuard)
+  @Delete('deleteSub/:ids')
+  async deleteSubscription(@Param('ids', ParseIntPipe) id: number) {
+    return this.adminService.deleteSubscription(id);
   }
-  return this.adminService.updateAdmin(adminId, updateAccountDto);
-}
+
+  /*@Put("update-account")
+  update(@Req() request: Request  & { admin: { ida: number } },
+      @Body() updateAccountDto: UpdateAccountDto,
+  ) {
+      const adminId = request.admin.ida
+      return this.adminService.updateAccount(adminId, updateAccountDto)
+  }*/
+  //mch sur te5dem
+  @UseGuards(AdminGuard)
+  @Put('updateAdmin')
+  async updateAdmin(@Req() request: AdminRequest, @Body() updateAccountDto: UpdateAccountDto) {
+    if (!request.admin) {
+      throw new UnauthorizedException();
+    }
+    const adminId = parseInt(request.admin["ida"]);
+    if (isNaN(adminId)) {
+      throw new Error("Invalid admin ID");
+    }
+    return this.adminService.updateAdmin(adminId, updateAccountDto);
+  }
 
 }

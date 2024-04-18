@@ -156,13 +156,13 @@ export class AdminService {
 
 
 
- /* async getAdminDashboard(): Promise<User[]> {
-    return this.prismaService.user.findMany({
-      where: {
-        isAdmin: true,
-      },
-    });
-  }*/
+  /* async getAdminDashboard(): Promise<User[]> {
+     return this.prismaService.user.findMany({
+       where: {
+         isAdmin: true,
+       },
+     });
+   }*/
   async getTotalUsers(): Promise<number> {
     const totalUsers = await this.prismaService.user.count();
     return totalUsers;
@@ -249,9 +249,9 @@ export class AdminService {
   52953081
   }*/
   async updateAdmin(adminId: number, updateAccountDto: UpdateAccountDto) {
-   // const adminIdAsNumber = parseInt(adminId, 10);
+    // const adminIdAsNumber = parseInt(adminId, 10);
     // Vérifie si l'administrateur existe
-    const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId  } });
+    const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
     if (!admin) {
       throw new NotFoundException('Admin not found');
     }
@@ -273,7 +273,7 @@ export class AdminService {
     return { message: 'Compte utilisateur mis à jour avec succès.' };
 
   }
-  
+
 
   async getUserId(userId: number): Promise<Admin> {
     return this.prismaService.admin.findUnique({

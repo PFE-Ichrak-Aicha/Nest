@@ -12,7 +12,7 @@ export class AdminGuard extends AuthGuard('jwt') {
   }
 
   handleRequest(err, user, info, context) {
-    if (err ||!user) {
+    if (err || !user) {
       return false;
     }
 
