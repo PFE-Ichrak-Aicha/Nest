@@ -110,6 +110,7 @@ export class AuthService {
             sub: admin.ida,
             email: admin.email,
             isAdmin: admin.isAdmin,
+            ida: admin.ida
     
         };
         const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
@@ -118,7 +119,7 @@ export class AuthService {
         return {
             token,
             admin: {
-                id: admin.ida, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
+                ida: admin.ida, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
                 email: admin.email
             }
         };

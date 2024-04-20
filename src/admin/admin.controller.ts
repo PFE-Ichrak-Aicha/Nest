@@ -1,4 +1,4 @@
-import { Controller, Param, ParseIntPipe, UnauthorizedException } from '@nestjs/common';
+import { Controller, NotFoundException, Param, ParseIntPipe, UnauthorizedException } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Query, BadRequestException } from '@nestjs/common';
@@ -10,6 +10,9 @@ import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { Admin } from '@prisma/client';
 import { Request } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { Headers } from '@nestjs/common';
+import { GetAdmin } from './custom-request.decorator';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -25,9 +28,17 @@ interface AdminRequest extends Request {
     ida: string;
   };
 }
+interface CustomRequest extends Request {
+  admin: {
+      ida: number; // Assurez-vous que le type de ida est correct
+      // Autres propriétés de l'administrateur si nécessaire
+  }
+}
 @UseGuards(AdminGuard)
 @Controller('admin')
 export class AdminController {
+  prismaService: any;
+  authService: any;
   constructor(private readonly adminService: AdminService) { }
 
   @UseGuards(AdminGuard)
@@ -93,6 +104,7 @@ export class AdminController {
   }
 
   @UseGuards(AdminGuard)
+  //@UseGuards(AuthGuard)
   @Post("Subscription")
   async createSubscription(
     @Body() createSubscriptionDto: CreateSubscriptionDto
@@ -140,15 +152,48 @@ export class AdminController {
   //mch sur te5dem
   @UseGuards(AdminGuard)
   @Put('updateAdmin')
-  async updateAdmin(@Req() request: AdminRequest, @Body() updateAccountDto: UpdateAccountDto) {
-    if (!request.admin) {
-      throw new UnauthorizedException();
-    }
-    const adminId = parseInt(request.admin["ida"]);
-    if (isNaN(adminId)) {
-      throw new Error("Invalid admin ID");
-    }
-    return this.adminService.updateAdmin(adminId, updateAccountDto);
+  async updateAdmin(@Req() request: CustomRequest, @Body() updateAccountDto: UpdateAccountDto) {
+      // Vérifier si l'admin est authentifié
+      if (request.admin) {
+          const adminId = request.admin.ida; // Accédez à ida à partir de request.admin
+          // Utilisez adminId pour effectuer des opérations de mise à jour
+          try {
+              const result = await this.adminService.updateAdmin(adminId, updateAccountDto);
+              return { message: 'Vos informations ont été mises à jour avec succès.' };
+          } catch (error) {
+              // Gérer les erreurs lors de la mise à jour des informations
+              throw new Error('Une erreur est survenue lors de la mise à jour de vos informations.');
+          }
+      } else {
+          // Si l'admin n'est pas authentifié, renvoyer une erreur non autorisée
+          throw new UnauthorizedException('Vous devez être connecté en tant qu\'administrateur pour effectuer cette opération.');
+      }
+  } 
+  /*@UseGuards(AdminGuard)
+  @Put('updateAdmin')
+  async updateAdmin(@GetAdmin() admin: { ida: number }, @Body() updateAccountDto: UpdateAccountDto) {
+      // Vérifier si l'admin est authentifié
+      //console.log('Request:', request);
+      //console.log('Request Admin:', request.admin);
+      //if (request.admin) {
+        //  const adminId = request.admin.ida; // Accédez à ida à partir de request.admin
+          // Utilisez adminId pour effectuer des opérations de mise à jour
+          try {
+              const result = await this.adminService.updateAdmin(admin.ida, updateAccountDto);
+              return { message: 'Vos informations ont été mises à jour avec succès.' };
+          }catch (error) {
+              // Gérer les erreurs lors de la mise à jour des informations
+              console.error('Error updating admin:', error);
+              throw new Error('Une erreur est survenue lors de la mise à jour de vos informations.');
+          }
+        }else {
+          // Si l'admin n'est pas authentifié, renvoyer une erreur non autorisée
+          console.error('Unauthorized: Admin not authenticated');
+    throw new UnauthorizedException('Vous devez être connecté en tant qu\'administrateur pour effectuer cette opération.');
+  }*/
+
   }
 
-}
+
+
+

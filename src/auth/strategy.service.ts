@@ -22,7 +22,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     async validate(payload: Payload) {
         const user = await this.prismaService.user.findUnique({ where: { email: payload.email } })
         if (!user) throw new UnauthorizedException("Unauthorized")
-
+          const isAdmin = await this.prismaService.admin.findUnique({ where: { email: payload.email } });
+        if (!isAdmin) throw new UnauthorizedException("Unauthorized");
         Reflect.deleteProperty(user, "MotDePasse")
         console.log(user)
         return user

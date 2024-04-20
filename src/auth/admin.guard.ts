@@ -1,27 +1,28 @@
 // admin.guard.ts
 // admin.guard.ts
 import { Injectable } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { AdminService } from 'src/admin/admin.service';
-
+import { CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { Request } from 'express';
+import { JwtService } from '@nestjs/jwt';
+import { Observable } from 'rxjs';
 
 @Injectable()
-export class AdminGuard extends AuthGuard('jwt') {
-  constructor(private adminService: AdminService) {
-    super();
-  }
+export class AdminGuard implements CanActivate {
+  constructor(private jwtService: JwtService) {}
 
-  handleRequest(err, user, info, context) {
-    if (err || !user) {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const req = context.switchToHttp().getRequest<Request>();
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
       return false;
     }
-
-    const isAdmin = this.adminService.isAdmin(user);
-
-    if (!isAdmin) {
+    const payload = this.jwtService.verify(token, { secret: 'SECRET_KEY' });
+    if (!payload || !payload.email || !payload.isAdmin) {
       return false;
     }
-
-    return user;
+    req.user = payload;
+    return true;
   }
 }

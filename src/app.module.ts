@@ -20,7 +20,7 @@ import { ExpertModule } from './expert/expert.module';
     }),
 
     AdminModule,
-    ExpertModule,],
+    ExpertModule,JwtModule],
   providers: []
 })
 export class AppModule { }

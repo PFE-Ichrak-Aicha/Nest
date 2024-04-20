@@ -31,10 +31,10 @@ enum TypeCarburant {
 export class AdminService {
   constructor(private readonly prismaService: PrismaService,) { }
 
-  async isAdmin(user: any): Promise<boolean> {
+ /* async isAdmin(user: any): Promise<boolean> {
     const admin = await this.prismaService.admin.findUnique({ where: { email: user.email } });
     return admin !== undefined;
-  }
+  }*/
   async getUsers(): Promise<Partial<User>[]> {
     const users = await this.prismaService.user.findMany({
       select: {
@@ -49,6 +49,8 @@ export class AdminService {
     });
     return users;
   }
+
+
   async getAllPublications(): Promise<Partial<Publication>[]> {
     const publications = await this.prismaService.publication.findMany({
       select: {
@@ -67,6 +69,8 @@ export class AdminService {
     });
     return publications;
   }
+
+
   async searchUsers(key: string) {
     const keyword = key
       ? {
@@ -95,6 +99,7 @@ export class AdminService {
       },
     });
   }
+
 
   async searchPublications(
     query: string,
@@ -156,6 +161,7 @@ export class AdminService {
 
 
 
+
   /* async getAdminDashboard(): Promise<User[]> {
      return this.prismaService.user.findMany({
        where: {
@@ -163,10 +169,12 @@ export class AdminService {
        },
      });
    }*/
+
   async getTotalUsers(): Promise<number> {
     const totalUsers = await this.prismaService.user.count();
     return totalUsers;
   }
+
   async getTotalPublications(): Promise<number> {
     const totalPublications = await this.prismaService.publication.count();
     return totalPublications;
@@ -220,6 +228,7 @@ export class AdminService {
     })
     return { data: "Subscription deleted" };
   }
+
   async updateAccount(adminId: number, updateAccountDto: UpdateAccountDto) {
     const user = await this.prismaService.admin.findUnique({ where: { ida: adminId } })
     if (!user) throw new NotFoundException('User not found')
@@ -249,30 +258,30 @@ export class AdminService {
   52953081
   }*/
   async updateAdmin(adminId: number, updateAccountDto: UpdateAccountDto) {
-    // const adminIdAsNumber = parseInt(adminId, 10);
-    // Vérifie si l'administrateur existe
+    // Récupérer l'administrateur à partir de son ID
     const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
     if (!admin) {
-      throw new NotFoundException('Admin not found');
+        throw new NotFoundException('Admin not found');
     }
-    let updateAccount: Admin
-    if (updateAccountDto.MotDePasse) {
-      const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
-      updateAccount = await this.prismaService.admin.update({
-        where: { ida: adminId },
-        data: { ...updateAccountDto, MotDePasse: hash },
-      });
-    }
-    else {
-      // Si le mot de passe n'est pas fourni, mettez à jour les autres champs sans toucher au mot de passe
-      updateAccount = await this.prismaService.admin.update({
-        where: { ida: adminId },
-        data: { ...updateAccountDto },
-      });
-    }
-    return { message: 'Compte utilisateur mis à jour avec succès.' };
 
-  }
+    // Mettre à jour les informations de l'administrateur
+    let updateAccount: Admin;
+    if (updateAccountDto.MotDePasse) {
+        const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
+        updateAccount = await this.prismaService.admin.update({
+            where: { ida: adminId },
+            data: { ...updateAccountDto, MotDePasse: hash },
+        });
+    } else {
+        updateAccount = await this.prismaService.admin.update({
+            where: { ida: adminId },
+            data: { ...updateAccountDto },
+        });
+    }
+
+    // Retourner un message de succès après la mise à jour
+    return { message: 'Vos informations ont été mises à jour avec succès.' };
+}
 
 
   async getUserId(userId: number): Promise<Admin> {
