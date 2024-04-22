@@ -13,7 +13,12 @@ import * as multer from 'multer';
 import { Publication, User } from '@prisma/client';
 import { UserWithoutPassword } from './user.service';
 import { AdminGuard } from 'src/auth/admin.guard';
-
+interface CustomRequest extends Request {
+    user: {
+        id: number; // Assurez-vous que le type de ida est correct
+        // Autres propriétés de l'administrateur si nécessaire
+    }
+  }
 export const storage = {
     storage: multer.diskStorage({
         destination: './uploads/profileimages',
@@ -47,12 +52,14 @@ export class UserController {
     }
 
 
-    @UseGuards(AuthGuard("jwt"))
+   // @UseGuards(AuthGuard("jwt"))
     @Put("update-account")
-    update(@Req() request: Request,
+    update(@Req() request: any,
         @Body() updateAccountDto: UpdateAccountDto,
-    ) {
-        const userId = request.user["id"]
+    ): Promise<any> {
+        const payload = request.user;
+        const userId = payload.sub;
+        //const userId = request.user["id"]
         return this.userService.updateAccount(userId, updateAccountDto)
     }
 

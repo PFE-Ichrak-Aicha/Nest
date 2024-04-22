@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -11,7 +11,9 @@ import path from 'path';
 import * as fs from 'fs';
 import { CreateAdminUserDto } from 'dto/createAdminUserDto';
 import { validate } from 'class-validator';
+import { JwtStrategy } from 'src/auth/strategy.service';
 import { plainToClass } from 'class-transformer';
+import { Payload } from '@prisma/client/runtime/library';
 export interface UserWithoutPassword extends Omit<User, 'MotDePasse'> { }
 export type AdminUserCreateInput = {
   email: string;
@@ -88,7 +90,17 @@ export class UserService {
     return { data: " User successfully deleted " }
   }
 
-  async updateAccount(userId: number, updateAccountDto: UpdateAccountDto) {
+ /* async updateAccount(userId: number, updateAccountDto: UpdateAccountDto) {
+      // Validate userId
+  if (typeof userId !== 'number' || userId <= 0) {
+    throw new BadRequestException('Invalid user ID');
+  }
+
+  // Validate updateAccountDto
+  const errors = await validate(updateAccountDto);
+  if (errors.length > 0) {
+    throw new BadRequestException('Invalid request data');
+  }
     const user = await this.prismaService.user.findUnique({ where: { id: userId } })
     if (!user) throw new NotFoundException('User not found')
     let updateAccount: User
@@ -108,7 +120,32 @@ export class UserService {
     }
     return { message: 'Compte utilisateur mis à jour avec succès.' };
 
+  }*/
+  async updateAccount(payload: { sub: number; email: string } | undefined, updateAccountDto: UpdateAccountDto) {
+    if (!payload) {
+      throw new UnauthorizedException("Unauthorized");
+    }
+  
+    const userId = payload.sub;
+    const user = await this.prismaService.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+  
+    let updateAccount: User;
+    if (updateAccountDto.MotDePasse) {
+      const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
+      updateAccount = await this.prismaService.user.update({
+        where: { id: userId },
+        data: { ...updateAccountDto, MotDePasse: hash },
+      });
+    } else {
+      // Si le mot de passe n'est pas fourni, mettez à jour les autres champs sans toucher au mot de passe
+      updateAccount = await this.prismaService.user.update({
+        where: { id: userId },
+        data: { ...updateAccountDto },
+      });
+    }
   }
+   
   async getProfileImageName(userId: number) {
     // Recherchez l'utilisateur dans la base de données en fonction de son ID
     try {

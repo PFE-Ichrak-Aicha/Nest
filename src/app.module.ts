@@ -11,7 +11,8 @@ import { MulterModule } from '@nestjs/platform-express';
 import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
 import { ExpertModule } from './expert/expert.module';
-
+import { AdminJwtStrategy } from './auth/admin-jwt.strategy';
+//import { AdminJwtStrategy } from './admin-jwt.strategy';
 @Module({
   imports: [AuthModule, PrismaModule, ConfigModule.forRoot({ isGlobal: true }), MailerModule, PassportModule, PubModule, UserModule,
     MulterModule.register({
@@ -21,6 +22,6 @@ import { ExpertModule } from './expert/expert.module';
 
     AdminModule,
     ExpertModule,JwtModule],
-  providers: []
+  providers: [AdminJwtStrategy]
 })
 export class AppModule { }

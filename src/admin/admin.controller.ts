@@ -1,4 +1,4 @@
-import { Controller, NotFoundException, Param, ParseIntPipe, UnauthorizedException } from '@nestjs/common';
+import { Controller, NotFoundException, Param, ParseIntPipe, UnauthorizedException,Request  } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Query, BadRequestException } from '@nestjs/common';
@@ -9,7 +9,7 @@ import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { Admin } from '@prisma/client';
-import { Request } from 'express';
+//import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { Headers } from '@nestjs/common';
 import { GetAdmin } from './custom-request.decorator';
@@ -149,26 +149,30 @@ export class AdminController {
       const adminId = request.admin.ida
       return this.adminService.updateAccount(adminId, updateAccountDto)
   }*/
-  //mch sur te5dem
+
   @UseGuards(AdminGuard)
   @Put('updateAdmin')
-  async updateAdmin(@Req() request: CustomRequest, @Body() updateAccountDto: UpdateAccountDto) {
-      // Vérifier si l'admin est authentifié
-      if (request.admin) {
-          const adminId = request.admin.ida; // Accédez à ida à partir de request.admin
-          // Utilisez adminId pour effectuer des opérations de mise à jour
-          try {
-              const result = await this.adminService.updateAdmin(adminId, updateAccountDto);
-              return { message: 'Vos informations ont été mises à jour avec succès.' };
-          } catch (error) {
-              // Gérer les erreurs lors de la mise à jour des informations
-              throw new Error('Une erreur est survenue lors de la mise à jour de vos informations.');
-          }
-      } else {
-          // Si l'admin n'est pas authentifié, renvoyer une erreur non autorisée
-          throw new UnauthorizedException('Vous devez être connecté en tant qu\'administrateur pour effectuer cette opération.');
-      }
-  } 
+  async updateAdminAccount(
+    @Request() req: any,
+    @Body() updateAccountDto: UpdateAccountDto,
+  ): Promise<any> {
+    const adminId = req.user.sub; // Obtient l'ID de l'administrateur à partir du token JWT
+    return this.adminService.updateAdmin(adminId, updateAccountDto);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   /*@UseGuards(AdminGuard)
   @Put('updateAdmin')
   async updateAdmin(@GetAdmin() admin: { ida: number }, @Body() updateAccountDto: UpdateAccountDto) {
