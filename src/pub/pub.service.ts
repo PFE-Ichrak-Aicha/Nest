@@ -53,11 +53,11 @@ export class PubService {
 
 
   async create(createPubDto: CreatePubDto, userId: number) {
-    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant } = createPubDto;
+    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant,city,boiteVitesse,transmission,carrassorie,sellerie } = createPubDto;
 
     await this.prismaService.publication.create({
       data: {
-        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId,
+        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId,city,boiteVitesse,transmission,carrassorie,sellerie
       },
     });
     return { data: " Publication créée " };
@@ -271,33 +271,29 @@ export class PubService {
 
 
   async getPublicationImages(publicationId: number, @Res() res: Response) {
-    const images = await this.prismaService.image.findMany({
-      where: {
-        publicationId: publicationId,
-      },
-      select: {
-        path: true,
-      },
-    });
+    try {
+      const images = await this.prismaService.image.findMany({
+        where: {
+          publicationId: publicationId,
+        },
+        select: {
+          path: true,
+        },
+      });
 
-
-
-    let imagesPath: any[] = [];
-    images.forEach(item => {
-      const imagePath = join("C://Users/ichra/flesk-car-nest", '..', 'uploads', 'images', item.path);
-      const x = {
-        path: imagePath
+      if (images.length === 0) {
+        return res.status(404).json({ error: "No images found for the given publication ID" });
       }
-      imagesPath.push(x)
-    });
 
+      const imagesPath: { path: string }[] = images.map(item => ({
+        path: 'http://localhost:3000/uploads/images/${item.path}'
+        // path: join(__dirname, '..', 'uploads', 'images', item.path)
+      }));
 
-
-
-
-    return res.status(200).json({ data: imagesPath });
-
-
+      return res.status(200).json({ data: imagesPath });
+    } catch (error) {
+      return res.status(500).json({ error: "Internal server error" });
+    }
   }
 
   //ADD to favoris

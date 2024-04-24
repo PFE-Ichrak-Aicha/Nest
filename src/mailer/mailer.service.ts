@@ -88,6 +88,7 @@ export class MailerService {
         });
         return transport;
     }
+    
 
     async sendInscriptionConfirmation(userEmail: string) {
         (await this.transporter()).sendMail({

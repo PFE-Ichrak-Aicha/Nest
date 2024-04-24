@@ -12,6 +12,7 @@ import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
 import { ExpertModule } from './expert/expert.module';
 import { AdminJwtStrategy } from './auth/admin-jwt.strategy';
+import { UserJwtStrategy } from './user/user-jwt.strategy';
 //import { AdminJwtStrategy } from './admin-jwt.strategy';
 @Module({
   imports: [AuthModule, PrismaModule, ConfigModule.forRoot({ isGlobal: true }), MailerModule, PassportModule, PubModule, UserModule,
@@ -21,7 +22,7 @@ import { AdminJwtStrategy } from './auth/admin-jwt.strategy';
     }),
 
     AdminModule,
-    ExpertModule,JwtModule],
-  providers: [AdminJwtStrategy]
+    ExpertModule, JwtModule],
+  providers: [AdminJwtStrategy, UserJwtStrategy]
 })
 export class AppModule { }

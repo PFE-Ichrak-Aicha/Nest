@@ -12,13 +12,13 @@ import { Observable, from, map, of } from 'rxjs';
 import * as multer from 'multer';
 import { Publication, User } from '@prisma/client';
 import { UserWithoutPassword } from './user.service';
-import { AdminGuard } from 'src/auth/admin.guard';
+import { UserGuard } from './user.guard';
 interface CustomRequest extends Request {
     user: {
         id: number; // Assurez-vous que le type de ida est correct
         // Autres propriétés de l'administrateur si nécessaire
     }
-  }
+}
 export const storage = {
     storage: multer.diskStorage({
         destination: './uploads/profileimages',
@@ -36,7 +36,7 @@ export const storage = {
 export class UserController {
     uploadService: any;
     constructor(private readonly userService: UserService) { }
-   
+
     @UseGuards(AuthGuard("jwt"))
     @Get(':id')
     async getUsrById(@Param('id', ParseIntPipe) userId: number): Promise<UserWithoutPassword> {
@@ -52,12 +52,16 @@ export class UserController {
     }
 
 
-   // @UseGuards(AuthGuard("jwt"))
+    @UseGuards(UserGuard)
     @Put("update-account")
     update(@Req() request: any,
         @Body() updateAccountDto: UpdateAccountDto,
     ): Promise<any> {
         const payload = request.user;
+        console.log("PAYYYYYY", payload)
+
+
+
         const userId = payload.sub;
         //const userId = request.user["id"]
         return this.userService.updateAccount(userId, updateAccountDto)
@@ -107,6 +111,6 @@ export class UserController {
         return from(this.userService.updateProfileImage(userId, file.filename));
     }
 
-    
+
 
 }

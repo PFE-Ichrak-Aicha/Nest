@@ -156,7 +156,9 @@ export class AdminController {
     @Request() req: any,
     @Body() updateAccountDto: UpdateAccountDto,
   ): Promise<any> {
-    const adminId = req.user.sub; // Obtient l'ID de l'administrateur à partir du token JWT
+    const adminId = req.user.sub; 
+    console.log("Admin",req.user)
+    
     return this.adminService.updateAdmin(adminId, updateAccountDto);
   }
 

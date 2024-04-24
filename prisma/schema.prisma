@@ -27,7 +27,7 @@ model User {
   //isAdmin      Boolean               @default(false)
   //MotDePasseConfirmation String        @db.VarChar(80)
   resetCode    String?
-  publications Publication[]         @relation("user_publications")
+ publications Publication[]         @relation("user_publications")
   favorites    PublicationFavorite[]
   //subscriptions Subscription[]
 }
@@ -43,32 +43,52 @@ model Admin {
 model Publication {
   pubid Int @id @default(autoincrement())
 
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  marque           String        @db.VarChar(20)
-  model            String        @db.VarChar(30)
-  anneeFabrication Int           @db.Int()
-  nombrePlace      Int           @db.Int()
-  couleur          String        @db.VarChar(30)
-  kilometrage      Int           @db.Int()
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  marque           String                @db.VarChar(20)
+  model            String                @db.VarChar(30)
+  anneeFabrication Int                   @db.Int()
+  nombrePlace      Int                   @db.Int()
+  couleur          String                @db.VarChar(30)
+  kilometrage      Int                   @db.Int()
   prix             Float
-  descrption       String?       @db.VarChar(400)
+  descrption       String?               @db.VarChar(400)
   typeCarburant    TypeCarburant
   userId           Int // Foreign key referencing User
   images           Image[]
-  video            Video?        @relation(fields: [videoId], references: [id])
-  videoId          Int?          @unique
-
+  video            Video?                @relation(fields: [videoId], references: [id])
+  videoId          Int?                  @unique
+  city             City
+  boiteVitesse     BoiteVitesse
+  transmission     String
+  carrassorie      String
+  sellerie         Sellerie
   // Define the relation to User
-  user    User                  @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  favoris PublicationFavorite[]
+  user             User                  @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  favoris          PublicationFavorite[]
 }
 
 enum TypeCarburant {
   Essence
   Diesel
   GPL
+  GNL
   Electrique
+  Ethanol
+}
+
+enum BoiteVitesse {
+  Manuelle
+  Automatique
+}
+
+enum Sellerie {
+  Alcantara
+  Cuir
+  Similcuir
+  Tisuu
+  Plastique
+  Velours
 }
 
 model Video {
@@ -87,6 +107,7 @@ model Image {
   publicationId Int
   publication   Publication @relation(fields: [publicationId], references: [pubid])
 }
+
 
 model PublicationFavorite {
   userId        Int
@@ -151,14 +172,15 @@ enum City {
   TOZEUR
   ZAGHOUAN
 }
+
 model ExpertRequest {
-  ider        Int      @id @default(autoincrement())
-  firstName String
-  lastName  String
-  email     String
-  telephone String
-  cv        String
+  ider       Int      @id @default(autoincrement())
+  firstName  String
+  lastName   String
+  email      String
+  telephone  String
+  cv         String
   isApproved Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

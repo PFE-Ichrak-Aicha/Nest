@@ -1,7 +1,7 @@
-import { TypeCarburant } from "@prisma/client"
+import { BoiteVitesse, Sellerie, TypeCarburant } from "@prisma/client"
 import { IsArray, IsNotEmpty } from "class-validator"
 //import { MediaDto } from "./mediaDto"
-
+import { City } from "@prisma/client"
 export class CreatePubDto {
     @IsNotEmpty()
     marque: string
@@ -20,6 +20,16 @@ export class CreatePubDto {
     descrption: string
     @IsNotEmpty()
     typeCarburant: TypeCarburant
+    @IsNotEmpty()
+    city : City
+    @IsNotEmpty()
+    boiteVitesse : BoiteVitesse
+    @IsNotEmpty()
+    transmission : string
+    @IsNotEmpty()
+    carrassorie: string
+    @IsNotEmpty()
+    sellerie : Sellerie
     //media: MediaDto[];
     //userId: number;
     //@IsArray()

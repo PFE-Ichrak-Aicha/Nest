@@ -24,46 +24,46 @@ export class AuthService {
         private readonly JwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly userService: UserService,) { }
-    async inscription(inscriptionDto: InscriptionDto) {
+        async inscription(inscriptionDto: InscriptionDto) {
 
-        const { Nom, Prenom, NumTel, Adresse, Ville, email, MotDePasse, CodePostal, PhotoProfil } = inscriptionDto
-        //**vérification de user : déja inscrit ou non */
-        const user = await this.prismaService.user.findUnique({ where: { email } });
-        if (user) throw new ConflictException('Utilisateur déja exist !');
-        //**vérification de mot de passe et de sa confirmation */
-        //if (MotDePasse !== MotDePasseConfirmation) throw new BadRequestException('Les mots de passe ne correspondent pas');
-        //** hasher mdp*/
-        const salt = await bcrypt.genSalt();
-        const hash = await bcrypt.hash(inscriptionDto.MotDePasse, salt);
-        const userExists = await this.prismaService.user.findUnique({ where: { email } });
-        if (userExists) throw new ConflictException('Utilisateur déja exist !');
-        const newUser = await this.prismaService.user.create({
-            data: {
-                Nom,
-                Prenom,
-                NumTel,
-                Adresse,
-                Ville,
-                email,
-                MotDePasse: hash,
-                CodePostal,
-                PhotoProfil: PhotoProfil ? PhotoProfil : null,
-            },
-        });
-        // if (PhotoProfil) {
-        //await this.userService.associateProfileImage(newUser.id, PhotoProfil);
-        //}
-        //**Envoyer un email de confirmation */
-        await this.mailerService.sendInscriptionConfirmation(inscriptionDto.email);
-        const payload = {
-            sub: newUser.id,
-            email: newUser.email
+            const { Nom, Prenom, NumTel, Adresse, Ville, email, MotDePasse, CodePostal, PhotoProfil } = inscriptionDto
+            //**vérification de user : déja inscrit ou non */
+            const user = await this.prismaService.user.findUnique({ where: { email } });
+            if (user) throw new ConflictException('Utilisateur déja exist !');
+            //**vérification de mot de passe et de sa confirmation */
+            //if (MotDePasse !== MotDePasseConfirmation) throw new BadRequestException('Les mots de passe ne correspondent pas');
+            //** hasher mdp*/
+            const salt = await bcrypt.genSalt();
+            const hash = await bcrypt.hash(inscriptionDto.MotDePasse, salt);
+            const userExists = await this.prismaService.user.findUnique({ where: { email } });
+            if (userExists) throw new ConflictException('Utilisateur déja exist !');
+            const newUser = await this.prismaService.user.create({
+                data: {
+                    Nom,
+                    Prenom,
+                    NumTel,
+                    Adresse,
+                    Ville,
+                    email,
+                    MotDePasse: hash,
+                    CodePostal,
+                    PhotoProfil: PhotoProfil ? PhotoProfil : null,
+                },
+            });
+            // if (PhotoProfil) {
+            //await this.userService.associateProfileImage(newUser.id, PhotoProfil);
+            //}
+            //**Envoyer un email de confirmation */
+            //await this.mailerService.sendInscriptionConfirmation(inscriptionDto.email);
+            const payload = {
+                sub: newUser.id,
+                email: newUser.email
+            }
+            const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
+            //**retourner une réponse de succès */
+            //return { data: 'Utilisateur enregistré ' };
+            return { message: "Utilisateur enregistré et connecté", user: newUser, token };
         }
-        const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
-        //**retourner une réponse de succès */
-        //return { data: 'Utilisateur enregistré ' };
-        return { message: "Utilisateur enregistré et connecté", user: newUser, token };
-    }
     async connexion(connexionDto: connexionDto) {
         const { email, MotDePasse } = connexionDto;
         // Recherche de l'utilisateur dans la base de données
