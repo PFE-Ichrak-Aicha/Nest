@@ -27,7 +27,7 @@ model User {
   //isAdmin      Boolean               @default(false)
   //MotDePasseConfirmation String        @db.VarChar(80)
   resetCode    String?
- publications Publication[]         @relation("user_publications")
+  publications Publication[]         @relation("user_publications")
   favorites    PublicationFavorite[]
   //subscriptions Subscription[]
 }
@@ -43,37 +43,39 @@ model Admin {
 model Publication {
   pubid Int @id @default(autoincrement())
 
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  marque           String                @db.VarChar(20)
-  model            String                @db.VarChar(30)
-  anneeFabrication Int                   @db.Int()
-  nombrePlace      Int                   @db.Int()
-  couleur          String                @db.VarChar(30)
-  kilometrage      Int                   @db.Int()
-  prix             Float
-  descrption       String?               @db.VarChar(400)
-  typeCarburant    TypeCarburant
-  userId           Int // Foreign key referencing User
-  images           Image[]
-  video            Video?                @relation(fields: [videoId], references: [id])
-  videoId          Int?                  @unique
-  city             City
-  boiteVitesse     BoiteVitesse
-  transmission     String
-  carrassorie      String
-  sellerie         Sellerie
-  equippements    Equippement[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  marque                  String                   @db.VarChar(20)
+  model                   String                   @db.VarChar(30)
+  anneeFabrication        Int                      @db.Int()
+  nombrePlace             Int                      @db.Int()
+  couleur                 String                   @db.VarChar(30)
+  kilometrage             Int                      @db.Int()
+  prix                    Float
+  descrption              String?                  @db.VarChar(400)
+  typeCarburant           TypeCarburant
+  userId                  Int // Foreign key referencing User
+  images                  Image[]
+  video                   Video?                   @relation(fields: [videoId], references: [id])
+  videoId                 Int?                     @unique
+  city                    City
+  boiteVitesse            BoiteVitesse
+  transmission            String
+  carrassorie             String
+  sellerie                Sellerie
+  equippements            Equippement[]
   // Define the relation to User
-  user             User                  @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  favoris          PublicationFavorite[]
-    equippementPublications EquippementPublication[]
+  user                    User                     @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  favoris                 PublicationFavorite[]
+  equippementPublications EquippementPublication[]
 }
 
 enum TypeCarburant {
   Essence
   Diesel
   GPL
+  Gpl 
+  Gnl 
   GNL
   Electrique
   Ethanol
@@ -94,20 +96,21 @@ enum Sellerie {
 }
 
 model Equippement {
-  equipid         Int      @id @default(autoincrement())
-  name            String
-  publications     Publication[]
-    equippementPublications EquippementPublication[] 
+  equipid                 Int                      @id @default(autoincrement())
+  name                    String
+  publications            Publication[]
+  equippementPublications EquippementPublication[]
+}
+model EquippementPublication {
+  idep          Int         @id @default(autoincrement())
+  publicationId Int
+  equippementId      Int
+  publication   Publication @relation(fields: [publicationId], references: [pubid])
+  equippement   Equippement @relation(fields: [equippementId ], references: [equipid])
+
+  @@unique([publicationId, equippementId ])
 }
 
-model EquippementPublication {
-  idep        Int      @id @default(autoincrement())
-  publicationId   Int
-  equippid   Int
-  publication      Publication   @relation(fields: [publicationId], references: [pubid])
-  equippement     Equippement   @relation(fields: [equippid], references: [equipid])
- @@unique([publicationId, equippid])
-}
 
 model Video {
   createdAt   DateTime     @default(now())
@@ -125,7 +128,6 @@ model Image {
   publicationId Int
   publication   Publication @relation(fields: [publicationId], references: [pubid])
 }
-
 
 model PublicationFavorite {
   userId        Int
@@ -166,29 +168,102 @@ model Expert {
 
 enum City {
   TUNIS
+  Tunis
+  tunis
+
   ARIANA
+  Ariana
+  ariana
+
+  Ben_Arous
+  ben_arous
   BEN_AROUS
+  ben_Arous
+
+  Bizerte
+  bizerte
   BIZERTE
+
+  Gabes
+  gabes
   GABES
+
+  Gafsa
+  gafsa
   GAFSA
+
+  Jendouba
+  jendouba
   JENDOUBA
+
+  Kairouan
+  kairouan
   KAIROUAN
+
+  Kasserine
   KASERINE
+  kasserine
+
+  kebili
+  Kebili
   KEBILI
-  LEKEIL
+
+  Mahdia
+  mahdia
   MAHDIA
+
+  Manouba
+  manouba
   MANOUBA
+
+  Medenine
+  medenine
   MEDENINE
+
+  Monastir
+  monastir
   MONASTIR
-  NASRALLAH
+
   NABEUL
+  Nabeul
+  nabeul
+
+  Sfax
+  sfax
   SFAX
+
+  Sidi_Bouzid
+  sidi_Bouzid
+  sidi_bouzid
   SIDI_BOUZID
+
+  Siliana
+  siliana
   SILIANA
+
   SOUSSE
+  Sousse
+  sousse
+
+  Tataouine
+  tataouine
   TATAOUINE
+
   TOZEUR
+  Tozeur
+  tozeur
+
+  Zaghouan
+  zaghoun
   ZAGHOUAN
+
+  BEJA
+  Beja
+  beja
+
+  Kef
+  kef
+  KEF
 }
 
 model ExpertRequest {

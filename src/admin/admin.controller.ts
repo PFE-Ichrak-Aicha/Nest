@@ -114,7 +114,7 @@ export class AdminController {
   }
 
   //mochkla
-  @UseGuards(AdminGuard)
+  //@UseGuards(AdminGuard)
   @Get("subscriptions")
   async getAllSubscriptions(): Promise<Partial<Subscription>[]> {
     const Subscriptions = await this.adminService.getAllSubscriptions();

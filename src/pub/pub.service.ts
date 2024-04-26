@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Res } from '@nestjs/common';
-import { Publication } from '@prisma/client';
+import { City, Publication } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -17,7 +17,9 @@ const between = (start: number, end: number) => ({
   gte: start,
   lte: end,
 });
-
+function normalizeCityInput(cityInput: string): string {
+  return cityInput.toUpperCase();
+}
 @Injectable()
 export class PubService {
   constructor(private readonly prismaService: PrismaService,) { }
@@ -187,7 +189,25 @@ export class PubService {
 
 
   async searchPublications(filterDto: PubFilterDto): Promise<Publication[]> {
-    const { marque, model, anneeMin, anneeMax, nombrePlace, kilometrageMin, kilometrageMax, prixMin, prixMax, typeCarburant, couleur } = filterDto;
+    const {
+      marque,
+      model,
+      anneeMin,
+      anneeMax,
+      nombrePlace,
+      kilometrageMin,
+      kilometrageMax,
+      prixMin,
+      prixMax,
+      typeCarburant,
+      couleur,
+      city,
+      boiteVitesse,
+      transmission,
+      sellerie,
+      equippements,
+    } = filterDto;
+   
     const anneeMinInt = anneeMin ? parseInt(anneeMin) : undefined;
     const anneeMaxInt = anneeMax ? parseInt(anneeMax) : undefined;
     const nombreplaceInt = nombrePlace ? parseInt(nombrePlace) : undefined;
@@ -195,6 +215,19 @@ export class PubService {
     const kilometrageMaxInt = kilometrageMax ? parseInt(kilometrageMax) : undefined
     const prixMinInt = prixMin || 0;
     const prixMaxInt = prixMax ? parseInt(prixMax) : undefined;
+    
+    let cityInput: City | undefined;
+    if (city) {
+      const normalizedCity = city.toUpperCase();
+      const cityIndex = Object.keys(City).indexOf(normalizedCity);
+      if (cityIndex !== -1) {
+        cityInput = City[Object.keys(City)[cityIndex]];
+      }
+    }
+
+
+    //const cityArray = city ? city.split(',').map(c => c.toLowerCase()) : undefined;
+    //const cityEnumArray = cityArray ? cityArray.map(c => City[c as keyof typeof City]) : undefined;
     const publications = await this.prismaService.publication.findMany({
       where: {
         marque: marque ? { equals: marque } : undefined,
@@ -211,6 +244,20 @@ export class PubService {
         },
         typeCarburant: typeCarburant ? { equals: typeCarburant } : undefined,
         couleur: couleur ? { equals: couleur } : undefined,
+        city: cityInput ? { equals: cityInput } : undefined,
+       // city: city ? { equals: city } : undefined,
+        boiteVitesse: boiteVitesse ? { equals: boiteVitesse } : undefined,
+        transmission: transmission ? { equals: transmission } : undefined,
+        sellerie: sellerie ? { equals: sellerie } : undefined,
+        equippementPublications: equippements
+          ? {
+              some: {
+                equippement: {
+                  name: { in: equippements },
+                },
+              },
+            }
+          : undefined,
       },
       orderBy: {
         createdAt: 'desc'

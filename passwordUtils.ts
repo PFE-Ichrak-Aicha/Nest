@@ -9,7 +9,7 @@ export async function hashPassword(password: string): Promise<string> {
 
 // Exemple d'utilisation
 async function testHashPassword() {
-  const plainPassword = 'YahyaouiAdmin23';
+  const plainPassword = 'Yahyaoui28@';
   const hashedPassword = await hashPassword(plainPassword);
   console.log(hashedPassword); // Cela affichera le mot de passe haché
 }

@@ -86,7 +86,24 @@ export class PubController {
   //Search 
   @Get('search')
   async searchPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
-    if (!filterDto.marque && !filterDto.model && !filterDto.anneeMin && !filterDto.anneeMax && !filterDto.nombrePlace && !filterDto.kilometrageMin && !filterDto.kilometrageMax && !filterDto.prixMin && !filterDto.prixMax && filterDto.typeCarburant == null && filterDto.couleur == null) {
+    if (!filterDto.marque &&
+       !filterDto.model &&
+        !filterDto.anneeMin && 
+        !filterDto.anneeMax && 
+        !filterDto.nombrePlace && 
+        !filterDto.kilometrageMin && 
+        !filterDto.kilometrageMax && 
+        !filterDto.prixMin && 
+        !filterDto.prixMax &&
+         filterDto.typeCarburant == null && 
+         filterDto.couleur == null &&
+         filterDto.city == null &&
+         filterDto.boiteVitesse == null &&
+         filterDto.transmission == null &&
+         filterDto.sellerie == null &&
+         filterDto.equippements == null
+    )
+        {
       return this.pubService.getAll();
     }
 
