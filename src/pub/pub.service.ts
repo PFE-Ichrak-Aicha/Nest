@@ -8,10 +8,11 @@ import { Image } from '@prisma/client';
 import { PubFilterDto } from 'dto/pubFilterDto';
 import { publicationStorage } from './pub.controller';
 import { join } from 'path';
-
+import { plainToClass } from 'class-transformer';
+import { validate } from 'class-validator';
 import { Response } from 'express'
 import { createReadStream } from 'fs';
-
+import { Equippement } from '@prisma/client';
 const between = (start: number, end: number) => ({
   gte: start,
   lte: end,
@@ -52,15 +53,70 @@ export class PubService {
   }
 
 
-  async create(createPubDto: CreatePubDto, userId: number) {
-    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant,city,boiteVitesse,transmission,carrassorie,sellerie } = createPubDto;
+ /* async create(createPubDto: CreatePubDto, userId: number) {
+    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie ,equippement, } = createPubDto;
 
-    await this.prismaService.publication.create({
+    const createdPublication = await this.prismaService.publication.create({
       data: {
-        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId,city,boiteVitesse,transmission,carrassorie,sellerie
+        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId, city, boiteVitesse, transmission, carrassorie, sellerie, equippement
       },
     });
-    return { data: " Publication créée " };
+    return { data: "Publication créée", pubid: createdPublication.pubid };
+  }*/
+  /*async create(createPubDto: CreatePubDto, userId: number) {
+    
+    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie, equippements } = createPubDto;
+   
+
+    const createdPublication = await this.prismaService.publication.create({
+      data: {
+        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId, city, boiteVitesse, transmission, carrassorie, sellerie, 
+        equippements: {
+          connect: equippements.map((equippementId) => ({ id: equippementId })),
+        }
+      },
+    });
+  
+    return { data: 'Publication créée', pubid: createdPublication.pubid };
+  }*/
+  async create(createPubDto: CreatePubDto, payload: any,) {
+    const userId = payload;
+    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie ,equippements} = createPubDto;
+  
+    // Créer la publication sans lier les équipements
+    const createdPublication = await this.prismaService.publication.create({
+      data: {
+        marque,
+        model,
+        anneeFabrication,
+        nombrePlace,
+        couleur,
+        kilometrage,
+        prix,
+        descrption,
+        typeCarburant,
+      
+        userId,
+         
+         
+        city,
+        boiteVitesse,
+        transmission,
+        carrassorie,
+        sellerie,
+        //equippements
+      },
+    });
+  
+     // Créer les relations many-to-many entre la publication et les équipements
+     await this.prismaService.equippementPublication.createMany({
+      data: equippements.map((equippementId) => ({
+        publicationId: createdPublication.pubid,
+        equippementId,
+      })),
+    });
+ 
+    return { data: 'Publication créée', pubid: createdPublication.pubid };
   }
 
 
@@ -193,8 +249,7 @@ export class PubService {
         couleur: true,
       },
     });
-    return
-    colors.map((pub) => pub.couleur);
+    return colors.map((pub) => pub.couleur);
   }
 
 

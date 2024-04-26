@@ -12,6 +12,7 @@ import * as multer from 'multer';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PubFilterDto } from 'dto/pubFilterDto';
 import { Response } from 'express';
+import { UserGuard } from 'src/user/user.guard';
 
 export const publicationStorage = {
   imageStorage: multer.diskStorage({
@@ -124,10 +125,12 @@ export class PubController {
   }
 
   //bch ta3mel creation d'une pub
+  @UseGuards(UserGuard)
   @Post("create")
-  @UseGuards(AuthGuard("jwt"))
-  create(@Body() createPubDto: CreatePubDto, @Req() request: Request) {
-    const userId = request.user["id"]
+
+  create(@Body() createPubDto: CreatePubDto, @Req() request: any) {
+    const payload = request.user;
+    const userId =payload.sub;
     return this.pubService.create(createPubDto, userId)
   }
 

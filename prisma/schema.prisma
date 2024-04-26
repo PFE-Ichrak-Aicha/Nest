@@ -63,9 +63,11 @@ model Publication {
   transmission     String
   carrassorie      String
   sellerie         Sellerie
+  equippements    Equippement[]
   // Define the relation to User
   user             User                  @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   favoris          PublicationFavorite[]
+    equippementPublications EquippementPublication[]
 }
 
 enum TypeCarburant {
@@ -89,6 +91,22 @@ enum Sellerie {
   Tisuu
   Plastique
   Velours
+}
+
+model Equippement {
+  equipid         Int      @id @default(autoincrement())
+  name            String
+  publications     Publication[]
+    equippementPublications EquippementPublication[] 
+}
+
+model EquippementPublication {
+  idep        Int      @id @default(autoincrement())
+  publicationId   Int
+  equippid   Int
+  publication      Publication   @relation(fields: [publicationId], references: [pubid])
+  equippement     Equippement   @relation(fields: [equippid], references: [equipid])
+ @@unique([publicationId, equippid])
 }
 
 model Video {
