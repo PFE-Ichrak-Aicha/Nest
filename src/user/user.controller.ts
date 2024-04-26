@@ -67,7 +67,7 @@ export class UserController {
         return this.userService.updateAccount(userId, updateAccountDto)
     }
 
-    @UseGuards(AuthGuard("jwt"))
+    /*@UseGuards(AuthGuard("jwt"))
     @Post('upload')
     @UseInterceptors(FileInterceptor('file', storage))
     async uploadFile(@UploadedFile() file, @Req() request: Request): Promise<Observable<Object>> {
@@ -81,6 +81,19 @@ export class UserController {
             throw new NotFoundException('Utilisateur non trouvé');
         }
         await this.userService.associateProfileImage(user, file.filename);
+        return of({ imagePath: file.filename });
+    }*/
+    @UseGuards(UserGuard)
+    @Post('upload')
+    @UseInterceptors(FileInterceptor('file', storage))
+    async uploadFile(@UploadedFile() file, @Req() request: any): Promise<Observable<Object>> {
+        const payload = request.user;
+        const userId = payload.sub;
+        const userExists = await this.userService.getUserById(userId);
+        if (!userExists) {
+            throw new NotFoundException('Utilisateur non trouvé');
+        }
+        await this.userService.associateProfileImage(userId, file.filename);
         return of({ imagePath: file.filename });
     }
 

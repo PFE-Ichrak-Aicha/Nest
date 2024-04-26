@@ -145,10 +145,11 @@ export class PubController {
   @UseGuards(UserGuard)
   @Post("create")
 
-  create(@Body() createPubDto: CreatePubDto, @Req() request: any) {
+  create(@Body() createPubDto: CreatePubDto, @Req() request: any): Promise<any> {
     const payload = request.user;
     const userId =payload.sub;
-    return this.pubService.create(createPubDto, userId)
+    console.log("ppp",payload)
+    return this.pubService.create(userId,createPubDto)
   }
 
   //bch tuploawdi tsawer
@@ -214,20 +215,27 @@ export class PubController {
   }
 
   //bch tfasa5 lpub
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(UserGuard)
   @Delete("delete/:id")
-  delete(@Param("id", ParseIntPipe) pubid: number, @Req() request: Request) {
-    const userId = request.user["id"]
+  delete(@Param("id", ParseIntPipe) pubid: number, @Req() request: any) {
+    const payload = request.user;
+    
+    const userId = payload.sub;
     return this.pubService.deleteWithImages(pubid, userId)
   }
 
   //bch ta3ml update ll info mta33 lpub
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(UserGuard)
   @Put("update/:id")
   update(@Param("id", ParseIntPipe) pubid: number,
     @Body() updatePubDto: UpdatePubDto,
-    @Req() request: Request) {
-    const userId = request.user["id"]
+    @Req() request:any) {
+      const payload = request.user;
+      //console.log("PAYYYYYY", payload)
+
+
+
+      const userId = payload.sub;
     return this.pubService.update(pubid, userId, updatePubDto)
   }
 
@@ -265,6 +273,10 @@ export class PubController {
     return this.pubService.getUserPublications(userId);
   }
 
+  @Get('subscription/:ids')
+  async getSubscriptionById(@Param('ids', ParseIntPipe) id: number) {
+    return this.pubService.getSubscriptionById(id);
+  }
 
 }
 

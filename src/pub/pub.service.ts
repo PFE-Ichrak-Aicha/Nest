@@ -55,16 +55,16 @@ export class PubService {
   }
 
 
- /* async create(createPubDto: CreatePubDto, userId: number) {
-    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie ,equippement, } = createPubDto;
-
-    const createdPublication = await this.prismaService.publication.create({
-      data: {
-        marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId, city, boiteVitesse, transmission, carrassorie, sellerie, equippement
-      },
-    });
-    return { data: "Publication créée", pubid: createdPublication.pubid };
-  }*/
+  /* async create(createPubDto: CreatePubDto, userId: number) {
+     const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie ,equippement, } = createPubDto;
+ 
+     const createdPublication = await this.prismaService.publication.create({
+       data: {
+         marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, userId, city, boiteVitesse, transmission, carrassorie, sellerie, equippement
+       },
+     });
+     return { data: "Publication créée", pubid: createdPublication.pubid };
+   }*/
   /*async create(createPubDto: CreatePubDto, userId: number) {
     
     const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie, equippements } = createPubDto;
@@ -81,10 +81,13 @@ export class PubService {
   
     return { data: 'Publication créée', pubid: createdPublication.pubid };
   }*/
-  async create(createPubDto: CreatePubDto, payload: any,) {
+  async create(payload: any, createPubDto: CreatePubDto) {
     const userId = payload;
-    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie ,equippements} = createPubDto;
-  
+    const user = await this.prismaService.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie, equippements } = createPubDto;
+
     // Créer la publication sans lier les équipements
     const createdPublication = await this.prismaService.publication.create({
       data: {
@@ -97,30 +100,26 @@ export class PubService {
         prix,
         descrption,
         typeCarburant,
-      
-        userId,
-         
-         
         city,
         boiteVitesse,
         transmission,
         carrassorie,
         sellerie,
+        userId,
         //equippements
       },
     });
-  
-     // Créer les relations many-to-many entre la publication et les équipements
-     await this.prismaService.equippementPublication.createMany({
+
+    // Créer les relations many-to-many entre la publication et les équipements
+    await this.prismaService.equippementPublication.createMany({
       data: equippements.map((equippementId) => ({
         publicationId: createdPublication.pubid,
         equippementId,
       })),
     });
- 
+
     return { data: 'Publication créée', pubid: createdPublication.pubid };
   }
-
 
   async associateImagesToPublication(pubId: number, fileNames: string[]): Promise<string[]> {
     const publication = await this.prismaService.publication.findUnique({ where: { pubid: pubId } });
@@ -207,7 +206,7 @@ export class PubService {
       sellerie,
       equippements,
     } = filterDto;
-   
+
     const anneeMinInt = anneeMin ? parseInt(anneeMin) : undefined;
     const anneeMaxInt = anneeMax ? parseInt(anneeMax) : undefined;
     const nombreplaceInt = nombrePlace ? parseInt(nombrePlace) : undefined;
@@ -215,7 +214,7 @@ export class PubService {
     const kilometrageMaxInt = kilometrageMax ? parseInt(kilometrageMax) : undefined
     const prixMinInt = prixMin || 0;
     const prixMaxInt = prixMax ? parseInt(prixMax) : undefined;
-    
+
     let cityInput: City | undefined;
     if (city) {
       const normalizedCity = city.toUpperCase();
@@ -245,18 +244,18 @@ export class PubService {
         typeCarburant: typeCarburant ? { equals: typeCarburant } : undefined,
         couleur: couleur ? { equals: couleur } : undefined,
         city: cityInput ? { equals: cityInput } : undefined,
-       // city: city ? { equals: city } : undefined,
+        // city: city ? { equals: city } : undefined,
         boiteVitesse: boiteVitesse ? { equals: boiteVitesse } : undefined,
         transmission: transmission ? { equals: transmission } : undefined,
         sellerie: sellerie ? { equals: sellerie } : undefined,
         equippementPublications: equippements
           ? {
-              some: {
-                equippement: {
-                  name: { in: equippements },
-                },
+            some: {
+              equippement: {
+                name: { in: equippements },
               },
-            }
+            },
+          }
           : undefined,
       },
       orderBy: {
@@ -337,7 +336,8 @@ export class PubService {
   }*/
 
 
-  async deleteWithImages(pubid: number, userId: number) {
+  async deleteWithImages(pubid: number, payload: any) {
+    const userId = payload;
     const publication = await this.prismaService.publication.findUnique({
       where: { pubid },
     });
@@ -349,21 +349,31 @@ export class PubService {
       throw new ForbiddenException("Forbidden action");
     }
     // delete all images associated with the publication
-    await this.prismaService.publication.update({
-      where: { pubid },
-      data: {
-        images: {
-          deleteMany: {},
-        },
+    await this.prismaService.image.deleteMany({
+      where: {
+        publicationId: pubid,
       },
     });
-    // delete the publication
-    await this.prismaService.publication.delete({ where: { pubid } });
-    return { data: "Publication and associated images deleted" };
+
+    // Supprimer les relations many-to-many avec les équipements
+    await this.prismaService.equippementPublication.deleteMany({
+      where: {
+        publicationId: pubid,
+      },
+    });
+
+    // Supprimer la publication
+    await this.prismaService.publication.delete({
+      where: {
+        pubid,
+      },
+    });
+
+    return { data: 'Publication and associated images deleted' };
   }
 
-
-  async update(pubid: number, userId: any, updatePubDto: UpdatePubDto) {
+  async update(pubid: number, payload: any, updatePubDto: UpdatePubDto) {
+    const userId = payload;
     const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
     if (!publication) throw new NotFoundException("Publication not found")
     if (publication.userId != userId) throw new ForbiddenException("Forbidden action")
@@ -440,7 +450,11 @@ export class PubService {
   }
 
 
-
+  async getSubscriptionById(id: number) {
+    return this.prismaService.subscription.findUnique({
+      where: { ids: id },
+    });
+  }
 
 
 

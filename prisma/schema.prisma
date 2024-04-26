@@ -63,6 +63,7 @@ model Publication {
   transmission            String
   carrassorie             String
   sellerie                Sellerie
+
   equippements            Equippement[]
   // Define the relation to User
   user                    User                     @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
@@ -277,3 +278,4 @@ model ExpertRequest {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+

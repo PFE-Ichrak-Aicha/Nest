@@ -52,7 +52,7 @@ export class UserService {
      });
    }*/
 
-  async getUserById(userId: number): Promise<UserWithoutPassword> {
+  /*async getUserById(userId: number): Promise<UserWithoutPassword> {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
     });
@@ -63,9 +63,10 @@ export class UserService {
     const { MotDePasse, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
-  async associateProfileImage(user: User, profileImage: string): Promise<void> {
+  async associateProfileImage(payload : any, profileImage: string): Promise<void> {
     // Recherche de l'utilisateur par ID
-    const existingUser = await this.prismaService.user.findUnique({ where: { id: user.id } });
+    const userId = payload ;
+    const existingUser = await this.prismaService.user.findUnique({ where: { id: userId} });
 
     // Vérifier si l'utilisateur existe
     if (!existingUser) {
@@ -73,7 +74,28 @@ export class UserService {
     }
     // Mettre à jour l'utilisateur avec la photo de profil
     await this.prismaService.user.update({
-      where: { id: user.id },
+      where: { id: userId },
+      data: { PhotoProfil: profileImage },
+    });
+  }*/
+  async getUserById(userId: number): Promise<UserWithoutPassword> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const { MotDePasse, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+  
+  async associateProfileImage(userId: number, profileImage: string): Promise<void> {
+    const existingUser = await this.prismaService.user.findUnique({ where: { id: userId } });
+    if (!existingUser) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+    await this.prismaService.user.update({
+      where: { id: userId },
       data: { PhotoProfil: profileImage },
     });
   }
