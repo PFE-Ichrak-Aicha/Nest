@@ -133,7 +133,7 @@ export class PubController {
   async getAllFuelTypes(): Promise<string[]> {
     return this.pubService.getAllTypesCarburant();
   }
-  @Get('equipments')
+ /*@Get('equipments')
   async getAllEquipments() {
     try {
       const equipments = await this.prismaService.equippement.findMany({
@@ -146,6 +146,29 @@ export class PubController {
     } catch (error) {
       console.error(error);
       return { error: 'Error retrieving equipments' };
+    }
+  }*/
+  @Get('equipment/:id')
+  async getEquipmentById(@Param('id') id: string) {
+    try {
+      const equipment = await this.prismaService.equippement.findUnique({
+        where: {
+          equipid:parseInt(id,10),
+        },
+        select: {
+          equipid: true,
+          name: true,
+        },
+      });
+
+      if (!equipment) {
+        return { error: 'Equipment not found' };
+      }
+
+      return equipment;
+    } catch (error) {
+      console.error(error);
+      return { error: 'Error retrieving equipment' };
     }
   }
   //Get PUB PAR ID
