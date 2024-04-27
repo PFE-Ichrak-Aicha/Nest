@@ -133,7 +133,21 @@ export class PubController {
   async getAllFuelTypes(): Promise<string[]> {
     return this.pubService.getAllTypesCarburant();
   }
-
+  @Get('equipments')
+  async getAllEquipments() {
+    try {
+      const equipments = await this.prismaService.equippement.findMany({
+        select: {
+         equipid: true,
+          name: true,
+        },
+      });
+      return equipments;
+    } catch (error) {
+      console.error(error);
+      return { error: 'Error retrieving equipments' };
+    }
+  }
   //Get PUB PAR ID
   @Get(':pubid')
   //@UseGuards(AuthGuard('jwt'))

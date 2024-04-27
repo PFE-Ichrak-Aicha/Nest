@@ -308,6 +308,15 @@ export class PubService {
     });
     return fuelTypes.map((pub) => pub.typeCarburant);
   }
+  /*async getAllEquipments():Promise<string[]>{
+    const equippement = await this.prismaService.publication.findMany({
+      distinct: ['equippements'],
+      select: {
+        equippements: true,
+      }
+    })
+    return equippement.map((pub) => pub.equippement)
+  }*/
 
 
   async filterPublications(filterDto: PubFilterDto): Promise<Publication[]> {
