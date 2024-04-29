@@ -87,23 +87,22 @@ export class PubController {
   @Get('search')
   async searchPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
     if (!filterDto.marque &&
-       !filterDto.model &&
-        !filterDto.anneeMin && 
-        !filterDto.anneeMax && 
-        !filterDto.nombrePlace && 
-        !filterDto.kilometrageMin && 
-        !filterDto.kilometrageMax && 
-        !filterDto.prixMin && 
-        !filterDto.prixMax &&
-         filterDto.typeCarburant == null && 
-         filterDto.couleur == null &&
-         filterDto.city == null &&
-         filterDto.boiteVitesse == null &&
-         filterDto.transmission == null &&
-         filterDto.sellerie == null &&
-         filterDto.equippements == null
-    )
-        {
+      !filterDto.model &&
+      !filterDto.anneeMin &&
+      !filterDto.anneeMax &&
+      !filterDto.nombrePlace &&
+      !filterDto.kilometrageMin &&
+      !filterDto.kilometrageMax &&
+      !filterDto.prixMin &&
+      !filterDto.prixMax &&
+      filterDto.typeCarburant == null &&
+      filterDto.couleur == null &&
+      filterDto.city == null &&
+      filterDto.boiteVitesse == null &&
+      filterDto.transmission == null &&
+      filterDto.sellerie == null &&
+      filterDto.equippements == null
+    ) {
       return this.pubService.getAll();
     }
 
@@ -133,27 +132,27 @@ export class PubController {
   async getAllFuelTypes(): Promise<string[]> {
     return this.pubService.getAllTypesCarburant();
   }
- /*@Get('equipments')
-  async getAllEquipments() {
-    try {
-      const equipments = await this.prismaService.equippement.findMany({
-        select: {
-         equipid: true,
-          name: true,
-        },
-      });
-      return equipments;
-    } catch (error) {
-      console.error(error);
-      return { error: 'Error retrieving equipments' };
-    }
-  }*/
+  /*@Get('equipments')
+   async getAllEquipments() {
+     try {
+       const equipments = await this.prismaService.equippement.findMany({
+         select: {
+          equipid: true,
+           name: true,
+         },
+       });
+       return equipments;
+     } catch (error) {
+       console.error(error);
+       return { error: 'Error retrieving equipments' };
+     }
+   }*/
   @Get('equipment/:id')
   async getEquipmentById(@Param('id') id: string) {
     try {
       const equipment = await this.prismaService.equippement.findUnique({
         where: {
-          equipid:parseInt(id,10),
+          equipid: parseInt(id, 10),
         },
         select: {
           equipid: true,
@@ -184,9 +183,9 @@ export class PubController {
 
   create(@Body() createPubDto: CreatePubDto, @Req() request: any): Promise<any> {
     const payload = request.user;
-    const userId =payload.sub;
-    console.log("ppp",payload)
-    return this.pubService.create(userId,createPubDto)
+    const userId = payload.sub;
+    console.log("ppp", payload)
+    return this.pubService.create(userId, createPubDto)
   }
 
   //bch tuploawdi tsawer
@@ -256,7 +255,7 @@ export class PubController {
   @Delete("delete/:id")
   delete(@Param("id", ParseIntPipe) pubid: number, @Req() request: any) {
     const payload = request.user;
-    
+
     const userId = payload.sub;
     return this.pubService.deleteWithImages(pubid, userId)
   }
@@ -266,22 +265,22 @@ export class PubController {
   @Put("update/:id")
   update(@Param("id", ParseIntPipe) pubid: number,
     @Body() updatePubDto: UpdatePubDto,
-    @Req() request:any) {
-      const payload = request.user;
-      //console.log("PAYYYYYY", payload)
+    @Req() request: any) {
+    const payload = request.user;
+    //console.log("PAYYYYYY", payload)
 
 
 
-      const userId = payload.sub;
+    const userId = payload.sub;
     return this.pubService.update(pubid, userId, updatePubDto)
   }
 
   //favoris
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(UserGuard)
   @Post(':id/favoris')
-  async addToFavorites(@Req() req, @Param('id', ParseIntPipe) publicationId: number) {
-    const userId = req.user.id;
-
+  async addToFavorites(@Req() request: any, @Param('id', ParseIntPipe) publicationId: number) {
+    const payload = request.user;
+    const userId = payload.sub;
     return this.pubService.addToFavorites(userId, publicationId);
   }
 

@@ -418,7 +418,8 @@ export class PubService {
   }
 
   //ADD to favoris
-  async addToFavorites(userId: number, publicationId: number) {
+  async addToFavorites(payload: any, publicationId: number) {
+    const userId = payload;
     return this.prismaService.publicationFavorite.create({
       data: {
         userId,
