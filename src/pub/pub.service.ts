@@ -4,15 +4,9 @@ import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { Image } from '@prisma/client';
 import { PubFilterDto } from 'dto/pubFilterDto';
-import { publicationStorage } from './pub.controller';
-import { join } from 'path';
-import { plainToClass } from 'class-transformer';
-import { validate } from 'class-validator';
+
 import { Response } from 'express'
-import { createReadStream } from 'fs';
-import { Equippement } from '@prisma/client';
 const between = (start: number, end: number) => ({
   gte: start,
   lte: end,
@@ -45,6 +39,31 @@ export class PubService {
     })
   }
 
+ /* async getEquipmentsForPublicationById(publicationId: number) {
+    // Récupérer la publication spécifique avec ses équipements
+    const publication = await this.prismaService.publication.findUnique({
+      where: {
+        pubid: publicationId,
+      },
+      include: {
+        equippements: true, // Inclure les équipements liés à la publication spécifique
+      },
+    });
+  
+    if (!publication) {
+      throw new NotFoundException(`Publication with ID ${publicationId} not found.`);
+    }
+  
+    // Afficher les équipements de la publication spécifique
+    console.log(`Equipements de la publication ${publication.pubid}:`);
+    publication.equippements.forEach((equippement) => {
+      console.log(`- ${equippement.name}`);
+    });
+  
+    return publication.equippements;
+  }*/
+
+  
 
   async getPubById(pubId: number): Promise<Publication> {
     const publication = await this.prismaService.publication.findUnique({
@@ -53,7 +72,23 @@ export class PubService {
     if (!publication) throw new NotFoundException("Publication not found");
     return publication;
   }
-
+  async getPublicationWithEquipments(pubId: number) {
+    const publication = await this.prismaService.publication.findUnique({
+      where: { pubid: pubId },
+      include: {
+        equippementPublications: {
+          include :{
+            equippement : true,
+          }
+        }
+      
+        },
+    });
+  
+    if (!publication) throw new NotFoundException('Publication not found');
+  
+    return publication;
+  }
 
   /* async create(createPubDto: CreatePubDto, userId: number) {
      const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie ,equippement, } = createPubDto;
@@ -308,6 +343,52 @@ export class PubService {
     });
     return fuelTypes.map((pub) => pub.typeCarburant);
   }
+  async getAllBoiteVitesse(): Promise<string[]> {
+    const boiteVitesse = await this.prismaService.publication.findMany({
+      distinct: ['boiteVitesse'],
+      select: {
+        boiteVitesse: true,
+      },
+    });
+    return boiteVitesse.map((pub) => pub.boiteVitesse);
+  }
+  async getAllTransmission(): Promise<string[]> {
+    const transmission = await this.prismaService.publication.findMany({
+      distinct: ['transmission'],
+      select: {
+        transmission: true,
+      },
+    });
+    return transmission.map((pub) => pub.transmission);
+  }
+  async getAllCarrassorie(): Promise<string[]> {
+    const carrassorie = await this.prismaService.publication.findMany({
+      distinct: ['carrassorie'],
+      select: {
+        carrassorie: true,
+      },
+    });
+    return carrassorie.map((pub) => pub.carrassorie);
+  }
+  async getAllSellerie(): Promise<string[]> {
+    const sellerie = await this.prismaService.publication.findMany({
+      distinct: ['sellerie'],
+      select: {
+        sellerie: true,
+      },
+    });
+    return sellerie.map((pub) => pub.sellerie);
+  }
+  /*async getAllEquippements(): Promise<string[]> {
+    const equippements = await this.prismaService.publication.findMany({
+      distinct: ['equippements'],
+      select: {
+        equippements: true,
+      },
+    });
+    return equippements.map((pub) => pub.equippements);
+  }*/
+
   /*async getAllEquipments():Promise<string[]>{
     const equippement = await this.prismaService.publication.findMany({
       distinct: ['equippements'],
@@ -390,7 +471,6 @@ export class PubService {
     return { data: "Publication modifiée !" }
   }
 
-
   async getPublicationImages(publicationId: number, @Res() res: Response) {
     try {
       const images = await this.prismaService.image.findMany({
@@ -407,7 +487,7 @@ export class PubService {
       }
 
       const imagesPath: { path: string }[] = images.map(item => ({
-        path: 'http://localhost:3000/uploads/images/${item.path}'
+        path: `http://localhost:3000/uploads/images/${item.path}`
         // path: join(__dirname, '..', 'uploads', 'images', item.path)
       }));
 

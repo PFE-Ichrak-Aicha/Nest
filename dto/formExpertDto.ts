@@ -6,6 +6,7 @@ import { diskStorage } from 'multer';
 import { City } from '@prisma/client';
 import { UploadedFile } from '@nestjs/common';
 import { Multer } from 'multer';
+import { IsFile } from 'is-file.validator';
 export class FormExpertDto {
 
     @IsNotEmpty()
@@ -31,15 +32,19 @@ export class FormExpertDto {
     @IsNotEmpty()
     city: City;
 
+
+    status: string;
+
     //@IsNotEmpty()
-   // @IsString()
-   // passe: string;
+    // @IsString()
+    // passe: string;
 
 
-    @IsNotEmpty()
+    // @IsNotEmpty()
     //cv : any
     //@UploadedFile()
     //@Type(() => FileInterceptor('cv'))
     //@ValidateNested()
-   cv: Express.Multer.File;
+    // @IsFile()
+    cv: Express.Multer.File;
 }

@@ -63,6 +63,12 @@ export class PubController {
   getAll() {
     return this.pubService.getAll()
   }
+  @Get(':id/equipments')
+  async getPublication(@Param('id', ParseIntPipe) pubId: number) {
+    const publication = await this.pubService.getPublicationWithEquipments(pubId);
+    return publication;
+  }
+
 
   //bch taffichi IMAGESPAR ID de pub
   @Get(':id/images')
@@ -70,9 +76,8 @@ export class PubController {
     let result = this.pubService.getPublicationImages(id, res);
 
     return result;
-
-
   }
+
 
   //FILTRER
   @Get('filtrer')
@@ -132,21 +137,39 @@ export class PubController {
   async getAllFuelTypes(): Promise<string[]> {
     return this.pubService.getAllTypesCarburant();
   }
-  /*@Get('equipments')
-   async getAllEquipments() {
-     try {
-       const equipments = await this.prismaService.equippement.findMany({
-         select: {
+  @Get('boiteVitesse')
+  async getAllBoiteVitesse(): Promise<string[]> {
+    return this.pubService.getAllBoiteVitesse();
+  }
+
+  @Get('transmission')
+  async getAllTransmission(): Promise<string[]> {
+    return this.pubService.getAllTransmission();
+  }
+
+  @Get('carrassorie')
+  async getAllCarrassorie(): Promise<string[]> {
+    return this.pubService.getAllCarrassorie();
+  }
+  @Get('sellerie')
+  async getAllSellerie(): Promise<string[]> {
+    return this.pubService.getAllSellerie();
+  }
+  @Get('equipments')
+  async getAllEquipments() {
+    try {
+      const equipments = await this.prismaService.equippement.findMany({
+        select: {
           equipid: true,
-           name: true,
-         },
-       });
-       return equipments;
-     } catch (error) {
-       console.error(error);
-       return { error: 'Error retrieving equipments' };
-     }
-   }*/
+          name: true,
+        },
+      });
+      return equipments;
+    } catch (error) {
+      console.error(error);
+      return { error: 'Error retrieving equipments' };
+    }
+  }
   @Get('equipment/:id')
   async getEquipmentById(@Param('id') id: string) {
     try {

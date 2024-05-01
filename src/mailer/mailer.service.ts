@@ -82,17 +82,17 @@ export class MailerService {
         const transport = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'Admin@gmail.com', // Your Gmail email address
-                pass: 'AdminYahyaoui23' // Your Gmail password or App Password
+                user: 'yahyaouiad28@gmail.com',
+                pass: 'hewr kyyd chea ddmh'
             }
         });
         return transport;
     }
-    
+
 
     async sendInscriptionConfirmation(userEmail: string) {
         (await this.transporter()).sendMail({
-            from: 'Admin@gmail.com',
+            from: 'yahyaouiad28@gmail.com',
             to: userEmail,
             subject: 'Inscription',
             html: '<h3>Confirmation d\'inscription</h3>'
@@ -103,7 +103,7 @@ export class MailerService {
         const url = ''; // Your password reset URL if necessary
         const transport = await this.transporter();
         await transport.sendMail({
-            from: 'Admin@gmail.com',
+            from: 'yahyaouiad28@gmail.com',
             to: userEmail,
             subject: 'Demande de réinitialisation de mot de passe',
             html: `<a href="${url}">Réinitialiser le mot de passe</a><br><h6>Code de confirmation: <strong>${code}</strong></h6>
@@ -114,7 +114,7 @@ export class MailerService {
     async sendResetPassConfirmationCode(userEmail: string, code: string) {
         const transport = await this.transporter();
         await transport.sendMail({
-            from: 'Admin@gmail.com',
+            from: 'yahyaouiad28@gmail.com',
             to: userEmail,
             subject: 'Vérification du code de réinitialisation de mot de passe',
             html: `<h3>Veuillez saisir le code de vérification pour réinitialiser votre mot de passe.</h3><br><h6>Code de confirmation: <strong>${code}</strong></h6>`,
@@ -124,7 +124,7 @@ export class MailerService {
     async sendResetPass(userEmail: string, url: string, code: string): Promise<void> {
         const transport = await this.transporter();
         await transport.sendMail({
-            from: 'Admin@gmail.com',
+            from: 'yahyaouiad28@gmail.com',
             to: userEmail,
             subject: 'Demande de réinitialisation de mot de passe',
             html: `<p>Vous avez demandé une réinitialisation de mot de passe.</p>
@@ -133,13 +133,13 @@ export class MailerService {
                    <p>Le code expirera dans 15 minutes.</p>`
         });
     }
-    async sendExpertDemand(formExpertDto: FormExpertDto,cv?: Express.Multer.File) {
+    async sendExpertDemand(formExpertDto: FormExpertDto, cv?: Express.Multer.File) {
         const transport = await this.transporter();
         await transport.sendMail({
-          from: 'Admin@gmail.com',
-          to: 'admin@example.com',
-          subject: 'Nouvelle demande d\'expert',
-          html: `<p>Un nouveau visiteur a demandé à devenir expert.</p>
+            from: 'yahyaouiad28@gmail.com',
+            to: 'admin@example.com',
+            subject: 'Nouvelle demande d\'expert',
+            html: `<p>Un nouveau visiteur a demandé à devenir expert.</p>
                  <p>Voici ses informations:</p>
                  <ul>
                    <li>Nom: ${formExpertDto.firstName}</li>
@@ -149,5 +149,5 @@ export class MailerService {
                  </ul>
                  <p>Vous pouvez consulter sa demande en cliquant <a href="${process.env.ADMIN_URL}/experts/demands">ici</a>.</p>`,
         });
-      }
+    }
 }

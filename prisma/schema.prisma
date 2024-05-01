@@ -15,29 +15,34 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  Nom          String                @db.VarChar(80)
-  Prenom       String                @db.VarChar(80)
-  NumTel       String                @db.VarChar(8)
+  Nom          String        @db.VarChar(80)
+  Prenom       String        @db.VarChar(80)
+  NumTel       String        @db.VarChar(8)
   Adresse      String
-  email        String                @unique @db.VarChar(80)
-  MotDePasse   String                @db.VarChar(80)
+  email        String        @unique @db.VarChar(80)
+  MotDePasse   String        @db.VarChar(80)
   Ville        String
   CodePostal   String?
   PhotoProfil  String?
   //isAdmin      Boolean               @default(false)
   //MotDePasseConfirmation String        @db.VarChar(80)
   resetCode    String?
-  publications Publication[]         @relation("user_publications")
-  favorites    PublicationFavorite[]
+  publications Publication[] @relation("user_publications")
+
+  favorites  PublicationFavorite[]
+  expertises DemandExpertise[]
+  notifications Notification[]
   //subscriptions Subscription[]
 }
 
 model Admin {
-  ida         Int     @id @default(autoincrement())
-  email       String  @unique @db.VarChar(80)
-  MotDePasse  String  @db.VarChar(80)
-  PhotoProfil String?
-  isAdmin     Boolean @default(true)
+  ida            Int             @id @default(autoincrement())
+  email          String          @unique @db.VarChar(80)
+  MotDePasse     String          @db.VarChar(80)
+  PhotoProfil    String?
+  isAdmin        Boolean         @default(true)
+  expertRequests ExpertRequest[]
+  notifications Notification[]
 }
 
 model Publication {
@@ -63,7 +68,7 @@ model Publication {
   transmission            String
   carrassorie             String
   sellerie                Sellerie
-
+  expertises              DemandExpertise[]
   equippements            Equippement[]
   // Define the relation to User
   user                    User                     @relation("user_publications", fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
@@ -75,8 +80,8 @@ enum TypeCarburant {
   Essence
   Diesel
   GPL
-  Gpl 
-  Gnl 
+  Gpl
+  Gnl
   GNL
   Electrique
   Ethanol
@@ -102,16 +107,16 @@ model Equippement {
   publications            Publication[]
   equippementPublications EquippementPublication[]
 }
+
 model EquippementPublication {
   idep          Int         @id @default(autoincrement())
   publicationId Int
-  equippementId      Int
+  equippementId Int
   publication   Publication @relation(fields: [publicationId], references: [pubid])
-  equippement   Equippement @relation(fields: [equippementId ], references: [equipid])
+  equippement   Equippement @relation(fields: [equippementId], references: [equipid])
 
-  @@unique([publicationId, equippementId ])
+  @@unique([publicationId, equippementId])
 }
-
 
 model Video {
   createdAt   DateTime     @default(now())
@@ -154,17 +159,34 @@ model Subscription {
 }
 
 model Expert {
-  ide       Int      @id @default(autoincrement())
+  ide       Int    @id @default(autoincrement())
   firstName String
   lastName  String
-  email     String   @unique
+  email     String @unique
   cv        String
-  city      City     @default(TUNIS)
+  city      City   @default(TUNIS)
   passe     String
   tel       String
-  //isApproved Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  expertiseId    Int               @unique
+  expertise      DemandExpertise[]
+  notifications Notification[]
+
+}
+
+model DemandExpertise {
+  idde        Int         @id @default(autoincrement())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  status      String      @default("en attente")
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  pubId       Int
+  publication Publication @relation(fields: [pubId], references: [pubid])
+  expertId    Int         @unique
+  expert      Expert      @relation(fields: [expertId], references: [ide])
 }
 
 enum City {
@@ -268,14 +290,32 @@ enum City {
 }
 
 model ExpertRequest {
-  ider       Int      @id @default(autoincrement())
-  firstName  String
-  lastName   String
-  email      String
-  telephone  String
-  cv         String
-  isApproved Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  ider      Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String
+  telephone String
+  cv        String
+  status    String   @default("en attente")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  city      City
+  adminId   Int
+  admin     Admin    @relation(fields: [adminId], references: [ida])
+  
 }
+model Notification{
+  idn Int  @id @default(autoincrement())
+  content   String
+  isRead Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+  admin     Admin?   @relation(fields: [adminId], references: [ida])
+  adminId   Int?
+  expert    Expert?  @relation(fields: [expertId], references: [ide])
+  expertId  Int?
 
+
+}
