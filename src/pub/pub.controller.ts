@@ -63,6 +63,7 @@ export class PubController {
   getAll() {
     return this.pubService.getAll()
   }
+
   @Get(':id/equipments')
   async getPublication(@Param('id', ParseIntPipe) pubId: number) {
     const publication = await this.pubService.getPublicationWithEquipments(pubId);
@@ -155,7 +156,7 @@ export class PubController {
   async getAllSellerie(): Promise<string[]> {
     return this.pubService.getAllSellerie();
   }
-  /*@Get('equipments')
+  @Get('equipmentss')
   async getAllEquipments() {
     try {
       const equipments = await this.prismaService.equippement.findMany({
@@ -169,11 +170,12 @@ export class PubController {
       console.error(error);
       return { error: 'Error retrieving equipments' };
     }
-  }*/
+  }
   @Get('equipments')
   async getEquipments(): Promise<any> {
     return await this.pubService.getEquipments();
   }
+
   @Get('equipment/:id')
   async getEquipmentById(@Param('id') id: string) {
     try {

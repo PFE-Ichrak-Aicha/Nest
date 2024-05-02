@@ -64,10 +64,10 @@ export class PubFilterDto {
   @IsOptional()
   sellerie: Sellerie;
 
-  @IsString({ each: true }) // Ajout du filtre pour les équipements
-  @IsOptional()
-  equippements: string[];
-
+  //@IsString({ each: true }) // Ajout du filtre pour les équipements
+  //@IsOptional()
+  //equippements: string[];
+  equippements?: string[];
   orderByPrice: 'asc' | 'desc' | undefined;
   orderByKilometrage: 'asc' | 'desc' | undefined;
 }

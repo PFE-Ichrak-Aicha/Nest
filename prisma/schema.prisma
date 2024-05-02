@@ -96,7 +96,7 @@ enum Sellerie {
   Alcantara
   Cuir
   Similcuir
-  Tisuu
+  Tissu
   Plastique
   Velours
 }

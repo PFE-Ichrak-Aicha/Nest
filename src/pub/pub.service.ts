@@ -42,8 +42,7 @@ export class PubService {
       }
     })
   }
-
-  /* async getEquipmentsForPublicationById(publicationId: number) {
+   /*async getEquipmentsForPublicationById(publicationId: number) {
      // Récupérer la publication spécifique avec ses équipements
      const publication = await this.prismaService.publication.findUnique({
        where: {
@@ -66,8 +65,6 @@ export class PubService {
    
      return publication.equippements;
    }*/
-
-
 
   async getPubById(pubId: number): Promise<Publication> {
     const publication = await this.prismaService.publication.findUnique({
@@ -231,6 +228,7 @@ export class PubService {
     });
     return updatedPublication;
   }
+
 
 
   async searchPublications(filterDto: PubFilterDto): Promise<Publication[]> {
@@ -416,12 +414,12 @@ export class PubService {
   }
   /*async getAllEquippements(): Promise<string[]> {
     const equippements = await this.prismaService.publication.findMany({
-      distinct: ['equippements'],
+      distinct: PublicationScalarFieldEnum.equippements,
       select: {
         equippements: true,
       },
     });
-    return equippements.map((pub) => pub.equippements);
+    return equippements.map((pub) => pub.equippement);
   }*/
 
   /*async getAllEquipments():Promise<string[]>{
