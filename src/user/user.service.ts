@@ -78,7 +78,8 @@ export class UserService {
       data: { PhotoProfil: profileImage },
     });
   }*/
-  async getUserById(userId: number): Promise<UserWithoutPassword> {
+  async getUserById(payload: any): Promise<UserWithoutPassword> {
+    const userId = payload;
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
     });
@@ -99,7 +100,8 @@ export class UserService {
       data: { PhotoProfil: profileImage },
     });
   }
-  async deleteAccount(userId: number) {
+  async deleteAccount(payload: any) {
+    const userId = payload;
     const user = await this.prismaService.user.findUnique({ where: { id: userId } })
     if (!user) throw new NotFoundException('User not found')
     await this.prismaService.user.delete({ where: { id: userId } });
@@ -179,14 +181,14 @@ export class UserService {
       throw error;
     }
   }
-  async updateProfileImage(userId: number, filename: string): Promise<Object> {
+  async updateProfileImage(payload: any, filename: string): Promise<Object> {
     // Recherche de l'utilisateur dans la base de données
+    const userId = typeof payload === 'number' ? payload : parseInt(payload);
     const user = await this.prismaService.user.findUnique({ where: { id: userId } });
     if (!user) {
       // Gérer le cas où l'utilisateur n'est pas trouvé
       throw new NotFoundException('User not found');
     }
-
     try {
       // Mettre à jour la colonne PhotoProfil de l'utilisateur avec le nom du fichier
       const updatedUser = await this.prismaService.user.update({

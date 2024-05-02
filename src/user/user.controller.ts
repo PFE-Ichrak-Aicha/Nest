@@ -37,17 +37,24 @@ export class UserController {
     uploadService: any;
     constructor(private readonly userService: UserService) { }
 
-    @UseGuards(AuthGuard("jwt"))
+    @UseGuards(UserGuard)
     @Get(':id')
-    async getUsrById(@Param('id', ParseIntPipe) userId: number): Promise<UserWithoutPassword> {
+    async getUsrById(@Param('id', ParseIntPipe) id: number, @Req() request: any): Promise<UserWithoutPassword> {
+        const payload = request.user;
+        const userId = payload && payload.sub ? payload.sub : null;
         return this.userService.getUserById(userId);
     }
 
 
-    @UseGuards(AuthGuard("jwt"))
+    @UseGuards(UserGuard)
     @Delete("delete-account")
-    deleteAccount(@Req() request: Request) {
-        const userId = request.user["id"]
+    deleteAccount(@Req() request: any) {
+        const payload = request.user;
+        //console.log("PAYYYYYY", payload)
+
+
+
+        const userId = payload.sub;
         return this.userService.deleteAccount(userId);
     }
 
@@ -116,14 +123,14 @@ export class UserController {
     }
 
 
-    @UseGuards(AuthGuard("jwt"))
+    @UseGuards(UserGuard)
     @Put('update-profile-image')
     @UseInterceptors(FileInterceptor('file', storage))
-    updateProfileImage(@UploadedFile() file, @Req() request: Request): Observable<Object> {
-        const userId = request.user["id"];
+    updateProfileImage(@UploadedFile() file, @Req() request: any): Observable<Object> {
+        const payload = request.user;
+        const userId = payload.sub;
         return from(this.userService.updateProfileImage(userId, file.filename));
     }
-
 
 
 }
