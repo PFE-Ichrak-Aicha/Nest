@@ -14,6 +14,10 @@ const between = (start: number, end: number) => ({
 function normalizeCityInput(cityInput: string): string {
   return cityInput.toUpperCase();
 }
+interface Equippement {
+  equipid: number;
+  name: string;
+}
 @Injectable()
 export class PubService {
   constructor(private readonly prismaService: PrismaService,) { }
@@ -39,31 +43,31 @@ export class PubService {
     })
   }
 
- /* async getEquipmentsForPublicationById(publicationId: number) {
-    // Récupérer la publication spécifique avec ses équipements
-    const publication = await this.prismaService.publication.findUnique({
-      where: {
-        pubid: publicationId,
-      },
-      include: {
-        equippements: true, // Inclure les équipements liés à la publication spécifique
-      },
-    });
-  
-    if (!publication) {
-      throw new NotFoundException(`Publication with ID ${publicationId} not found.`);
-    }
-  
-    // Afficher les équipements de la publication spécifique
-    console.log(`Equipements de la publication ${publication.pubid}:`);
-    publication.equippements.forEach((equippement) => {
-      console.log(`- ${equippement.name}`);
-    });
-  
-    return publication.equippements;
-  }*/
+  /* async getEquipmentsForPublicationById(publicationId: number) {
+     // Récupérer la publication spécifique avec ses équipements
+     const publication = await this.prismaService.publication.findUnique({
+       where: {
+         pubid: publicationId,
+       },
+       include: {
+         equippements: true, // Inclure les équipements liés à la publication spécifique
+       },
+     });
+   
+     if (!publication) {
+       throw new NotFoundException(`Publication with ID ${publicationId} not found.`);
+     }
+   
+     // Afficher les équipements de la publication spécifique
+     console.log(`Equipements de la publication ${publication.pubid}:`);
+     publication.equippements.forEach((equippement) => {
+       console.log(`- ${equippement.name}`);
+     });
+   
+     return publication.equippements;
+   }*/
 
-  
+
 
   async getPubById(pubId: number): Promise<Publication> {
     const publication = await this.prismaService.publication.findUnique({
@@ -77,16 +81,16 @@ export class PubService {
       where: { pubid: pubId },
       include: {
         equippementPublications: {
-          include :{
-            equippement : true,
+          include: {
+            equippement: true,
           }
         }
-      
-        },
+
+      },
     });
-  
+
     if (!publication) throw new NotFoundException('Publication not found');
-  
+
     return publication;
   }
 
@@ -146,17 +150,17 @@ export class PubService {
     });
 
     // Créer les relations many-to-many entre la publication et les équipements
-   /* await this.prismaService.equippementPublication.createMany({
-      data: equippements.map((equippementId) => ({
-        publicationId: createdPublication.pubid,
-        equippementId,
-      })),
-    });*/
+    /* await this.prismaService.equippementPublication.createMany({
+       data: equippements.map((equippementId) => ({
+         publicationId: createdPublication.pubid,
+         equippementId,
+       })),
+     });*/
     const equippementPublicationData = equippements.map((equipid) => ({
       publicationId: createdPublication.pubid,
-       equippementId : equipid,
+      equippementId: equipid,
     }));
-  
+
     await this.prismaService.equippementPublication.createMany({
       data: equippementPublicationData,
     });
@@ -386,6 +390,30 @@ export class PubService {
     });
     return sellerie.map((pub) => pub.sellerie);
   }
+  async getEquipments(): Promise<Equippement[]> {
+    try {
+      const equipments = await this.prismaService.equippementPublication.findMany({
+        where: {
+          publicationId: {
+            not: undefined,
+          },
+        },
+        select: {
+          equippement: {
+            select: {
+              equipid: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      return equipments.map((ep) => ep.equippement);
+    } catch (error) {
+      throw error;
+    }
+
+  }
   /*async getAllEquippements(): Promise<string[]> {
     const equippements = await this.prismaService.publication.findMany({
       distinct: ['equippements'],
@@ -469,28 +497,28 @@ export class PubService {
     return { data: 'Publication and associated images deleted' };
   }
 
- /* async update(pubid: number, payload: any, updatePubDto: UpdatePubDto) {
-    const userId = payload;
-    const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
-    if (!publication) throw new NotFoundException("Publication not found")
-    if (publication.userId != userId) throw new ForbiddenException("Forbidden action")
-    await this.prismaService.publication.update({ where: { pubid }, data: { ...updatePubDto } })
-    return { data: "Publication modifiée !" }
-  }*/
+  /* async update(pubid: number, payload: any, updatePubDto: UpdatePubDto) {
+     const userId = payload;
+     const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
+     if (!publication) throw new NotFoundException("Publication not found")
+     if (publication.userId != userId) throw new ForbiddenException("Forbidden action")
+     await this.prismaService.publication.update({ where: { pubid }, data: { ...updatePubDto } })
+     return { data: "Publication modifiée !" }
+   }*/
   async update(pubid: number, userId: number, updatePubDto: UpdatePubDto) {
     const publication = await this.prismaService.publication.findUnique({
       where: { pubid },
       include: { equippementPublications: true },
     });
-  
+
     if (!publication) {
       throw new NotFoundException("Publication not found");
     }
-  
+
     if (publication.userId !== userId) {
       throw new ForbiddenException("Forbidden action");
     }
-  
+
     const {
       marque,
       model,
@@ -508,7 +536,7 @@ export class PubService {
       sellerie,
       equippements,
     } = updatePubDto;
-  
+
     // Mettre à jour les informations de la publication
     const updatedPublication = await this.prismaService.publication.update({
       where: { pubid },
@@ -529,23 +557,23 @@ export class PubService {
         sellerie,
       },
     });
-  
+
     // Mettre à jour les relations many-to-many avec les équipements
     // Supprimer les anciennes relations
     await this.prismaService.equippementPublication.deleteMany({
       where: { publicationId: pubid },
     });
-  
+
     // Créer les nouvelles relations
     const equippementPublicationData = equippements.map((equippementId) => ({
       publicationId: pubid,
       equippementId,
     }));
-  
+
     await this.prismaService.equippementPublication.createMany({
       data: equippementPublicationData,
     });
-  
+
     return { data: "Publication modifiée !" };
   }
 
