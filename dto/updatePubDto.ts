@@ -1,4 +1,4 @@
-import { TypeCarburant } from "@prisma/client"
+import { BoiteVitesse, City, Sellerie, TypeCarburant } from "@prisma/client"
 import { IsNotEmpty , IsOptional} from "class-validator"
 
 export class UpdatePubDto {
@@ -27,4 +27,27 @@ export class UpdatePubDto {
     @IsNotEmpty()
     @IsOptional()
     typeCarburant ?: TypeCarburant
+    @IsNotEmpty()
+  @IsOptional()
+  city?: City;
+
+  @IsNotEmpty()
+  @IsOptional()
+  boiteVitesse?: BoiteVitesse;
+
+  @IsNotEmpty()
+  @IsOptional()
+  transmission?: string;
+
+  @IsNotEmpty()
+  @IsOptional()
+  carrassorie?: string;
+
+  @IsNotEmpty()
+  @IsOptional()
+  sellerie?: Sellerie;
+
+  @IsOptional()
+  equippements?: number[];
+
 }

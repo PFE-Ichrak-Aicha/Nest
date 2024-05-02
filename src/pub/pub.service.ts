@@ -146,13 +146,20 @@ export class PubService {
     });
 
     // Créer les relations many-to-many entre la publication et les équipements
-    await this.prismaService.equippementPublication.createMany({
+   /* await this.prismaService.equippementPublication.createMany({
       data: equippements.map((equippementId) => ({
         publicationId: createdPublication.pubid,
         equippementId,
       })),
+    });*/
+    const equippementPublicationData = equippements.map((equipid) => ({
+      publicationId: createdPublication.pubid,
+       equippementId : equipid,
+    }));
+  
+    await this.prismaService.equippementPublication.createMany({
+      data: equippementPublicationData,
     });
-
     return { data: 'Publication créée', pubid: createdPublication.pubid };
   }
 
@@ -462,13 +469,84 @@ export class PubService {
     return { data: 'Publication and associated images deleted' };
   }
 
-  async update(pubid: number, payload: any, updatePubDto: UpdatePubDto) {
+ /* async update(pubid: number, payload: any, updatePubDto: UpdatePubDto) {
     const userId = payload;
     const publication = await this.prismaService.publication.findUnique({ where: { pubid } })
     if (!publication) throw new NotFoundException("Publication not found")
     if (publication.userId != userId) throw new ForbiddenException("Forbidden action")
     await this.prismaService.publication.update({ where: { pubid }, data: { ...updatePubDto } })
     return { data: "Publication modifiée !" }
+  }*/
+  async update(pubid: number, userId: number, updatePubDto: UpdatePubDto) {
+    const publication = await this.prismaService.publication.findUnique({
+      where: { pubid },
+      include: { equippementPublications: true },
+    });
+  
+    if (!publication) {
+      throw new NotFoundException("Publication not found");
+    }
+  
+    if (publication.userId !== userId) {
+      throw new ForbiddenException("Forbidden action");
+    }
+  
+    const {
+      marque,
+      model,
+      anneeFabrication,
+      nombrePlace,
+      couleur,
+      kilometrage,
+      prix,
+      descrption,
+      typeCarburant,
+      city,
+      boiteVitesse,
+      transmission,
+      carrassorie,
+      sellerie,
+      equippements,
+    } = updatePubDto;
+  
+    // Mettre à jour les informations de la publication
+    const updatedPublication = await this.prismaService.publication.update({
+      where: { pubid },
+      data: {
+        marque,
+        model,
+        anneeFabrication,
+        nombrePlace,
+        couleur,
+        kilometrage,
+        prix,
+        descrption,
+        typeCarburant,
+        city,
+        boiteVitesse,
+        transmission,
+        carrassorie,
+        sellerie,
+      },
+    });
+  
+    // Mettre à jour les relations many-to-many avec les équipements
+    // Supprimer les anciennes relations
+    await this.prismaService.equippementPublication.deleteMany({
+      where: { publicationId: pubid },
+    });
+  
+    // Créer les nouvelles relations
+    const equippementPublicationData = equippements.map((equippementId) => ({
+      publicationId: pubid,
+      equippementId,
+    }));
+  
+    await this.prismaService.equippementPublication.createMany({
+      data: equippementPublicationData,
+    });
+  
+    return { data: "Publication modifiée !" };
   }
 
   async getPublicationImages(publicationId: number, @Res() res: Response) {
