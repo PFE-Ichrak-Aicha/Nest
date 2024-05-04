@@ -1,18 +1,14 @@
-import { Controller, NotFoundException, Param, ParseIntPipe, UnauthorizedException,Request  } from '@nestjs/common';
+import { Controller, Param, ParseIntPipe,Request  } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
-import { Body, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Query, BadRequestException } from '@nestjs/common';
+import { Body, Req, UseGuards, Delete, Put, Post,  Get, Query, BadRequestException } from '@nestjs/common';
 import { Publication, Subscription, TypeCarburant } from '@prisma/client';
-import { Request as ExpressRequest, Response, NextFunction, request } from 'express';
 import { User } from '@prisma/client';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
-import { Admin } from '@prisma/client';
-//import { Request } from 'express';
-import { AuthGuard } from '@nestjs/passport';
-import { Headers } from '@nestjs/common';
-import { GetAdmin } from './custom-request.decorator';
+import { Notification } from '@prisma/client';
+
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -162,9 +158,10 @@ export class AdminController {
     return this.adminService.updateAdmin(adminId, updateAccountDto);
   }
 
-
-
-
+  @Get('notifications/:adminId')
+  async getAdminNotifications(@Param('adminId') adminId: number): Promise<Notification[]> {
+    return this.adminService.getAdminNotifications(adminId);
+  }
 
 
 

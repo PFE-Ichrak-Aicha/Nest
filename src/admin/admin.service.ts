@@ -8,7 +8,7 @@ import { UpdateAccountDto } from 'dto/updateAccountDto';
 //import { PublicationWhereInput } from '@prisma/client';
 //import { UserCreateNestedOneWithoutSubscriptionsInput } from '@generated/type-graphql';
 import * as bcrypt from 'bcrypt';
-
+import { Notification } from '@prisma/client';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -292,5 +292,14 @@ export class AdminService {
 
   isAdminn(user: any): boolean {
     return user.isAdmin;
+  }
+
+
+  async getAdminNotifications(adminId: number): Promise<Notification[]> {
+    return this.prismaService.notification.findMany({
+      where: {
+        adminId,
+      },
+    });
   }
 }

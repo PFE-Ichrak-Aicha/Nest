@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put } from '@nestjs/common';
+import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req } from '@nestjs/common';
 import * as multer from 'multer';
 import { diskStorage } from 'multer';
 import { ExpertService } from './expert.service';
@@ -6,7 +6,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateExpertDto } from 'dto/createExpertDto';
 import { FormExpertDto } from 'dto/formExpertDto';
 import { MailerService } from 'src/mailer/mailer.service';
-
+import { Socket } from 'socket.io';
 const certifStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/certif');
@@ -25,10 +25,10 @@ export class ExpertController {
   async createExpertRequest(
     @UploadedFile() cv,
     @Body() requestData: FormExpertDto,
+    @Req() req: any
   ) {
-
-
-    return this.expertService.createExpertRequest(requestData, cv.originalname);
+    const client: Socket = req.clientSocket;
+    return this.expertService.createExpertRequest(requestData, cv.originalname,client);
   }
 
   @Get('demand/:id')

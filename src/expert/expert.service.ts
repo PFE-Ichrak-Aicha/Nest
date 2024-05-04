@@ -1,17 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import * as multer from 'multer';
 import { PrismaService } from 'src/prisma/prisma.service';
-import * as fs from 'fs';
-import { CreateExpertDto } from 'dto/createExpertDto';
-import * as bcrypt from 'bcrypt';
-import { diskStorage } from 'multer';
-import { City } from '@prisma/client';
+import { Socket} from 'socket.io'
 import { FormExpertDto } from 'dto/formExpertDto';
+import { NotificationGateway } from 'src/notification/notification.gateway';
+import { NotificationService } from 'src/notification/notification.service';
 @Injectable()
 export class ExpertService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService , private readonly notificationGateway: NotificationGateway, private readonly notificationService : NotificationService) { }
 
-  async createExpertRequest(requestData: FormExpertDto, cv: string) {
+  async createExpertRequest(requestData: FormExpertDto, cv: string,client: Socket) {
     try {
 
 
@@ -37,12 +35,28 @@ export class ExpertService {
           admin: { connect: { ida: adminId } }
         }
       });
-
+      const notificationContent = JSON.stringify(requestData); // Convertir les données en JSON
+      await this.notificationService.createNotificationToAdmin(notificationContent,client);
       return "Demande d'expertise créée avec succès et envoyée à l'administrateur.";
     } catch (error) {
       throw new Error("Une erreur s'est produite lors de la création de la demande d'expertise.");
     }
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
   async updateExpertRequest(id: number, requestData: FormExpertDto, cv: string) {
     try {
