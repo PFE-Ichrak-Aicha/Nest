@@ -157,9 +157,11 @@ export class AdminController {
     
     return this.adminService.updateAdmin(adminId, updateAccountDto);
   }
-
-  @Get('notifications/:adminId')
-  async getAdminNotifications(@Param('adminId') adminId: number): Promise<Notification[]> {
+  @UseGuards(AdminGuard)
+  @Get('notifications')
+  async getAdminNotifications( @Request() req: any): Promise<Notification[]> {
+    const adminId = req.user.sub; 
+    console.log("Admin",req.user)
     return this.adminService.getAdminNotifications(adminId);
   }
 

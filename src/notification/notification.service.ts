@@ -20,7 +20,17 @@ export class NotificationService {
         this.notificationGateway.emitNotification(notification);
         return notification;
     }*/
-    createNotificationToAdmin(content: string, client: Socket) {
+    async createNotificationToAdmin(content: string, client: Socket) {
+        const newNotification = await this.prisma.notification.create({
+            data: {
+              content,
+              isRead: false,
+              adminId: 1, // ID de l'administrateur
+            },
+          });
+      
         this.notificationGateway.sendNotificationToAdmin(content,client);
-      }
+    return newNotification  
+    }
+      
 }
