@@ -27,8 +27,8 @@ export class ExpertController {
     @Body() requestData: FormExpertDto,
     @Req() req: any
   ) {
-    const client: Socket = req.clientSocket;
-    return this.expertService.createExpertRequest(requestData, cv.originalname,client);
+    const client: Socket = req;
+    return this.expertService.createExpertRequest(requestData, cv.originalname, client);
   }
 
   @Get('demand/:id')

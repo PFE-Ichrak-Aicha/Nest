@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Res } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Res } from '@nestjs/common';
 import { City, Publication } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
@@ -123,7 +123,29 @@ export class PubService {
     if (!user) throw new NotFoundException('User not found');
 
     const { marque, model, anneeFabrication, nombrePlace, couleur, kilometrage, prix, descrption, typeCarburant, city, boiteVitesse, transmission, carrassorie, sellerie, equippements } = createPubDto;
+    const existingPublication = await this.prismaService.publication.findFirst({
+      where: {
+        marque,
+        model,
+        anneeFabrication,
+        nombrePlace,
+        couleur,
+        kilometrage,
+        prix,
+        descrption,
+        typeCarburant,
+        city,
+        boiteVitesse,
+        transmission,
+        carrassorie,
+        sellerie,
+        userId,
+      },
+    });
 
+    if (existingPublication) {
+      throw new ConflictException('Une publication avec les mêmes informations existe déjà.');
+    }
     // Créer la publication sans lier les équipements
     const createdPublication = await this.prismaService.publication.create({
       data: {

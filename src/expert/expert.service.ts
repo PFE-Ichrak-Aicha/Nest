@@ -1,20 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import * as multer from 'multer';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Socket} from 'socket.io'
+import { Socket } from 'socket.io'
 import { FormExpertDto } from 'dto/formExpertDto';
 import { NotificationGateway } from 'src/notification/notification.gateway';
 import { NotificationService } from 'src/notification/notification.service';
 @Injectable()
 export class ExpertService {
-  constructor(private prisma: PrismaService , private readonly notificationGateway: NotificationGateway, private readonly notificationService : NotificationService) { }
+  constructor(private prisma: PrismaService, private readonly notificationGateway: NotificationGateway, private readonly notificationService: NotificationService) { }
 
-  async createExpertRequest(requestData: FormExpertDto, cv: string,client: Socket) {
+  async createExpertRequest(requestData: FormExpertDto, cv: string, client: Socket) {
     try {
 
 
-      console.log("hii")
+      // console.log("hii")
+      // const existingRequest = await this.prisma.expertRequest.findFirst({
+      //   where: {
+      //     email: requestData.email,
+      //     createdAt: {
+      //       gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 jours en millisecondes
+      //     },
+      //   },
+      // });
 
+      // if (existingRequest) {
+      //   throw new Error("Vous avez déjà soumis une demande d'expertise dans les 7 derniers jours.");
+      // }
       const newRequest = await this.prisma.expertRequest.create({
         data: {
           firstName: requestData.firstName,
@@ -36,10 +47,12 @@ export class ExpertService {
         }
       });
       const notificationContent = JSON.stringify(requestData); // Convertir les données en JSON
-      await this.notificationService.createNotificationToAdmin(notificationContent,client);
+
+      console.log("here is notificationContent;", notificationContent)
+      await this.notificationService.createNotificationToAdmin(notificationContent, client);
       return "Demande d'expertise créée avec succès et envoyée à l'administrateur.";
     } catch (error) {
-      throw new Error("Une erreur s'est produite lors de la création de la demande d'expertise.");
+      throw new Error(error);
     }
   }
 
@@ -56,7 +69,7 @@ export class ExpertService {
 
 
 
-  
+
 
   async updateExpertRequest(id: number, requestData: FormExpertDto, cv: string) {
     try {

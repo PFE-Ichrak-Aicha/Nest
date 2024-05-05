@@ -1,5 +1,5 @@
 import { ConnectedSocket, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import {Server, Socket} from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import { Notification } from "@prisma/client";
 import { Admin } from "@prisma/client";
 
@@ -8,7 +8,7 @@ export class NotificationGateway {
   @WebSocketServer()
   server: Server;
 
-  
+
   private connectedAdmins: Map<string, Admin> = new Map();
   /*async notifyAdmin(expertRequest: any) {
     this.server.emit('new_expert_request', expertRequest);
@@ -37,10 +37,13 @@ export class NotificationGateway {
   }
 
   @SubscribeMessage('sendNotificationToAdmin')
-  sendNotificationToAdmin(content: string,  client: Socket) {
-    const admin = this.connectedAdmins.get(client.id);
-    if (admin && admin.isAdmin) {
-      this.server.emit('notificationToAdmin', content);
-    }
+  sendNotificationToAdmin(content: string, client: Socket) {
+
+
+
+    this.server.emit('notificationToAdmin', (res) => {
+      console.log('notification send with success', content)
+    });
+
   }
 }
