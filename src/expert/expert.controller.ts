@@ -51,16 +51,8 @@ export class ExpertController {
   }
 
 
-  @Post(':ider/confirm')
-  async confirmReq(@Param('ider') ider: number): Promise<{ success: boolean }> {
-    const success = await this.expertService.confirmRequest(ider);
-    return { success };
-  }
-  @Post(':ider/refuse')
-  async refuseReq(@Param('ider') ider: number): Promise<{ success: boolean }> {
-    const success = await this.expertService.refuseRequest(ider);
-    return { success };
-  }
+ 
+ 
 
 
 

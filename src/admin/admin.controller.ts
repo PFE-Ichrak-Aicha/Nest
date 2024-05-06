@@ -2,7 +2,7 @@ import { Controller, Param, ParseIntPipe,Request  } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post,  Get, Query, BadRequestException } from '@nestjs/common';
-import { Publication, Subscription, TypeCarburant } from '@prisma/client';
+import { Expert, Publication, Subscription, TypeCarburant } from '@prisma/client';
 import { User } from '@prisma/client';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
@@ -165,9 +165,30 @@ export class AdminController {
     return this.adminService.getAdminNotifications(adminId);
   }
 
+  @UseGuards(AdminGuard)
+  @Post(':ider/confirm')
+  async confirmReq(@Param('ider') ider: number): Promise<{ success: boolean }> {
+    const success = await this.adminService.confirmRequest(ider);
+    return { success };
+  }
 
+  @UseGuards(AdminGuard)
+  @Post(':ider/refuse')
+  async refuseReq(@Param('ider') ider: number): Promise<{ success: boolean }> {
+    const success = await this.adminService.refuseRequest(ider);
+    return { success };
+  }
 
-
+@UseGuards(AdminGuard)
+@Get('experts')
+async getAllExperts(): Promise<Expert[]> {
+    return this.adminService.getAllExperts();
+}
+@UseGuards(AdminGuard)
+@Get('experts/:id')
+async getExpertById(@Param('id') id: number): Promise<Expert> {
+    return this.adminService.getExpertById(id);
+}
 
 
 

@@ -6,7 +6,7 @@ import { FormExpertDto } from 'dto/formExpertDto';
 import { NotificationGateway } from 'src/notification/notification.gateway';
 import { NotificationService } from 'src/notification/notification.service';
 import { MailerService } from 'src/mailer/mailer.service';
-import * as bcrypt from 'bcrypt';
+
 
 @Injectable()
 export class ExpertService {
@@ -121,78 +121,6 @@ export class ExpertService {
       throw new Error("Une erreur s'est produite lors de la récupération de la demande d'expertise.");
     }
   }
-
-
-
-
-  async confirmRequest(expertReqId: any): Promise<boolean> {
-    try {
-
-      let id = parseInt(expertReqId, 10);
-      const currentRequest = await this.prisma.expertRequest.findUnique({
-
-        where: { ider: id }
-
-      });
-      if (!currentRequest) {
-        throw new Error(`Request with ID ${expertReqId} not found.`);
-      }
-
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(currentRequest.email, saltRounds);
-      const newExpert = await this.prisma.expert.create({
-        data: {
-          firstName: currentRequest.firstName,
-          lastName: currentRequest.lastName,
-          email: currentRequest.email,
-          cv: currentRequest.cv,
-          city: currentRequest.city,
-          passe: hashedPassword, // Le mot de passe sera l'email de la demande d'expertise
-          tel: currentRequest.telephone, // Le numéro de téléphone sera celui de la demande d'expertise
-
-        },
-      });
-      await this.prisma.expertRequest.update({
-        where: { ider: id },
-        data: { status: 'approuvé' },
-      });
-      await this.mailerService.sendExpertAcceptanceEmail(currentRequest.email, currentRequest.email);
-
-      return true;
-    } catch (error) {
-      console.error('Error confirming order:', error);
-      return false;
-    }
-  }
-
-  async refuseRequest(expertReqId: any): Promise<boolean> {
-    try {
-
-      let id = parseInt(expertReqId, 10);
-      const currentRequest = await this.prisma.expertRequest.findUnique({
-
-        where: { ider: id }
-
-      });
-      if (!currentRequest) {
-        throw new Error(`Request with ID ${expertReqId} not found.`);
-      }
-
-      await this.prisma.expertRequest.update({
-        where: { ider: id },
-        data: { status: 'refusé' },
-      });
-      await this.mailerService.sendExpertRefusalEmail(currentRequest.email);
-      return true;
-    } catch (error) {
-      console.error('Error confirming order:', error);
-      return false;
-    }
-  }
-
-
-
-
 
 
   /* private readonly certifStorage = multer.diskStorage({

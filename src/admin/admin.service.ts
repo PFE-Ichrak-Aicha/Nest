@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Admin, Publication, Subscription, User } from '@prisma/client';
+import { Admin, Expert, Publication, Subscription, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { MailerService } from 'src/mailer/mailer.service';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
@@ -29,7 +29,7 @@ enum TypeCarburant {
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prismaService: PrismaService,) { }
+  constructor(private readonly prismaService: PrismaService,private readonly mailerService: MailerService,private prisma: PrismaService) { }
 
  /* async isAdmin(user: any): Promise<boolean> {
     const admin = await this.prismaService.admin.findUnique({ where: { email: user.email } });
@@ -229,27 +229,6 @@ export class AdminService {
     return { data: "Subscription deleted" };
   }
 
-  async updateAccount(adminId: number, updateAccountDto: UpdateAccountDto) {
-    const user = await this.prismaService.admin.findUnique({ where: { ida: adminId } })
-    if (!user) throw new NotFoundException('User not found')
-    let updateAccount: Admin
-    if (updateAccountDto.MotDePasse) {
-      const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
-      updateAccount = await this.prismaService.admin.update({
-        where: { ida: adminId },
-        data: { ...updateAccountDto, MotDePasse: hash },
-      });
-    }
-    else {
-      // Si le mot de passe n'est pas fourni, mettez à jour les autres champs sans toucher au mot de passe
-      updateAccount = await this.prismaService.admin.update({
-        where: { ida: adminId },
-        data: { ...updateAccountDto },
-      });
-    }
-    return { message: 'Compte utilisateur mis à jour avec succès.' };
-
-  }
   /*async deleteSub(ids : number , userId: number){
     const subscription = await this.prismaService.subscription.findUnique({where:{ids}});
     if (!subscription) throw new NotFoundException("subscription not found")
@@ -300,6 +279,90 @@ export class AdminService {
       where: {
         adminId,
       },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
   }
+
+  async confirmRequest(expertReqId: any): Promise<boolean> {
+    try {
+
+      let id = parseInt(expertReqId, 10);
+      const currentRequest = await this.prisma.expertRequest.findUnique({
+
+        where: { ider: id }
+
+      });
+      if (!currentRequest) {
+        throw new Error(`Request with ID ${expertReqId} not found.`);
+      }
+
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(currentRequest.email, saltRounds);
+      const newExpert = await this.prisma.expert.create({
+        data: {
+          firstName: currentRequest.firstName,
+          lastName: currentRequest.lastName,
+          email: currentRequest.email,
+          cv: currentRequest.cv,
+          city: currentRequest.city,
+          passe: hashedPassword, // Le mot de passe sera l'email de la demande d'expertise
+          tel: currentRequest.telephone, // Le numéro de téléphone sera celui de la demande d'expertise
+
+        },
+      });
+      await this.prisma.expertRequest.update({
+        where: { ider: id },
+        data: { status: 'approuvé' },
+      });
+      await this.mailerService.sendExpertAcceptanceEmail(currentRequest.email, currentRequest.email);
+
+      return true;
+    } catch (error) {
+      console.error('Error confirming order:', error);
+      return false;
+    }
+  }
+
+  async refuseRequest(expertReqId: any): Promise<boolean> {
+    try {
+
+      let id = parseInt(expertReqId, 10);
+      const currentRequest = await this.prisma.expertRequest.findUnique({
+
+        where: { ider: id }
+
+      });
+      if (!currentRequest) {
+        throw new Error(`Request with ID ${expertReqId} not found.`);
+      }
+
+      await this.prisma.expertRequest.update({
+        where: { ider: id },
+        data: { status: 'refusé' },
+      });
+      await this.mailerService.sendExpertRefusalEmail(currentRequest.email);
+      return true;
+    } catch (error) {
+      console.error('Error confirming order:', error);
+      return false;
+    }
+  }
+
+  async getAllExperts(): Promise<Expert[]> {
+    return this.prismaService.expert.findMany();
+}
+async getExpertById(ide: any): Promise<Expert> {
+  
+  let id = parseInt(ide, 10);
+  return this.prismaService.expert.findUnique({
+      where: { ide: id }
+  });
+}
+
+
+
+
+
 }
