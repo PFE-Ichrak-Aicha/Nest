@@ -35,8 +35,6 @@ export class CreateExpertDto {
     passe: string;
 
 
-    @IsNotEmpty()
-    @Type(() => FileInterceptor('cv'))
-    @ValidateNested()
+   
     cv: Express.Multer.File;
 }

@@ -7,11 +7,7 @@ import { MailerService } from 'src/mailer/mailer.service';
 import { connexionDto } from 'dto/connexionDto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { ResetPasseDemandDto } from 'dto/resetPassDemandDto';
-import { ResetPasseConfirmationDto } from 'dto/resetPasseConfirmationDto';
 import { UserService } from 'src/user/user.service';
-import { ValidatePassCodeDto } from 'dto/validatePassCodeDto';
-import { User } from '@prisma/client';
 //import { DeleteAccountDto } from 'dto/deleteAccountDto';
 import { Request, Response} from 'express';
 

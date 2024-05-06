@@ -5,15 +5,18 @@ import { Socket } from 'socket.io'
 import { FormExpertDto } from 'dto/formExpertDto';
 import { NotificationGateway } from 'src/notification/notification.gateway';
 import { NotificationService } from 'src/notification/notification.service';
+import { MailerService } from 'src/mailer/mailer.service';
+import * as bcrypt from 'bcrypt';
+
 @Injectable()
 export class ExpertService {
-  constructor(private prisma: PrismaService, private readonly notificationGateway: NotificationGateway, private readonly notificationService: NotificationService) { }
+  constructor(private prisma: PrismaService, private readonly notificationGateway: NotificationGateway, private readonly notificationService: NotificationService, private readonly mailerService: MailerService) { }
 
   async createExpertRequest(requestData: FormExpertDto, cv: string, client: Socket) {
     try {
 
 
-      // console.log("hii")
+      // console.log("hii")àào
       // const existingRequest = await this.prisma.expertRequest.findFirst({
       //   where: {
       //     email: requestData.email,
@@ -135,10 +138,25 @@ export class ExpertService {
         throw new Error(`Request with ID ${expertReqId} not found.`);
       }
 
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(currentRequest.email, saltRounds);
+      const newExpert = await this.prisma.expert.create({
+        data: {
+          firstName: currentRequest.firstName,
+          lastName: currentRequest.lastName,
+          email: currentRequest.email,
+          cv: currentRequest.cv,
+          city: currentRequest.city,
+          passe: hashedPassword, // Le mot de passe sera l'email de la demande d'expertise
+          tel: currentRequest.telephone, // Le numéro de téléphone sera celui de la demande d'expertise
+
+        },
+      });
       await this.prisma.expertRequest.update({
         where: { ider: id },
         data: { status: 'approuvé' },
       });
+      await this.mailerService.sendExpertAcceptanceEmail(currentRequest.email, currentRequest.email);
 
       return true;
     } catch (error) {
@@ -146,11 +164,6 @@ export class ExpertService {
       return false;
     }
   }
-
-
-
-
-
 
   async refuseRequest(expertReqId: any): Promise<boolean> {
     try {
@@ -169,7 +182,7 @@ export class ExpertService {
         where: { ider: id },
         data: { status: 'refusé' },
       });
-
+      await this.mailerService.sendExpertRefusalEmail(currentRequest.email);
       return true;
     } catch (error) {
       console.error('Error confirming order:', error);

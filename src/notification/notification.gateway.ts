@@ -30,7 +30,6 @@ export class NotificationGateway {
     // Stocker les informations de l'administrateur dans le contexte de la connexion
     this.connectedAdmins.set(client.id, admin);
   }
-
   handleDisconnect(client: Socket) {
     // Supprimer la connexion de l'administrateur
     this.connectedAdmins.delete(client.id);
@@ -38,9 +37,6 @@ export class NotificationGateway {
 
   @SubscribeMessage('sendNotificationToAdmin')
   sendNotificationToAdmin(content: string, client: Socket) {
-
-
-
     this.server.emit('notificationToAdmin', (res) => {
       console.log('notification send with success', content)
     });

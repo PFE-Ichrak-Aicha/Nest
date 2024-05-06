@@ -150,4 +150,27 @@ export class MailerService {
                  <p>Vous pouvez consulter sa demande en cliquant <a href="${process.env.ADMIN_URL}/experts/demands">ici</a>.</p>`,
         });
     }
+
+    async sendExpertAcceptanceEmail(userEmail: string, userPassword: string): Promise<void> {
+        const transport = await this.transporter();
+        await transport.sendMail({
+            from: 'yahyaouiad28@gmail.com',
+            to: userEmail,
+            subject: 'Confirmation d\'acceptation en tant qu\'expert',
+            html: `<p>Votre demande pour devenir expert a été acceptée.</p>
+                   <p>Votre adresse e-mail: ${userEmail}</p>
+                   <p>Votre mot de passe: ${userPassword}</p>
+                   <p>Vous pouvez maintenant vous connecter en utilisant votre adresse e-mail comme identifiant et votre mot de passe.</p>`,
+        });
+    }
+
+    async sendExpertRefusalEmail(userEmail: string): Promise<void> {
+        const transport = await this.transporter();
+        await transport.sendMail({
+            from: 'yahyaouiad28@gmail.com',
+            to: userEmail,
+            subject: 'Refus de la demande d\'expertise',
+            html: '<p>Votre demande pour devenir expert a été refusée par l\'administrateur.</p>'
+        });
+    }
 }
