@@ -9,6 +9,7 @@ import { UpdateAccountDto } from 'dto/updateAccountDto';
 //import { UserCreateNestedOneWithoutSubscriptionsInput } from '@generated/type-graphql';
 import * as bcrypt from 'bcrypt';
 import { Notification } from '@prisma/client';
+import { ExpertRequest } from '@prisma/client';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -284,6 +285,30 @@ export class AdminService {
       }
     });
   }
+  
+  async getNotificationByIdAndMarkAsRead(idn: any): Promise<Notification> {
+    try {
+      let id = parseInt(idn,10)
+        const notification = await this.prismaService.notification.findUnique({
+            where: { idn: id }
+        });
+
+        if (!notification) {
+            throw new Error(`Notification with ID ${id} not found.`);
+        }
+
+        // Marquer la notification comme lue
+        await this.prismaService.notification.update({
+            where: { idn: id },
+            data: { isRead: true }
+        });
+
+        return notification;
+    } catch (error) {
+        console.error('Error getting and marking notification as read:', error);
+        throw new Error('Failed to get and mark notification as read.');
+    }
+}
 
   async confirmRequest(expertReqId: any): Promise<boolean> {
     try {
@@ -361,6 +386,9 @@ async getExpertById(ide: any): Promise<Expert> {
   });
 }
 
+async getAllExpertRequests(): Promise<ExpertRequest[]> {
+  return this.prismaService.expertRequest.findMany();
+}
 
 
 

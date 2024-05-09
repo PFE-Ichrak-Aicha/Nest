@@ -1,14 +1,17 @@
-import { Controller, Param, ParseIntPipe,Request  } from '@nestjs/common';
+import { Controller, Param, ParseIntPipe, Request } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
-import { Body, Req, UseGuards, Delete, Put, Post,  Get, Query, BadRequestException } from '@nestjs/common';
+import { Body, Req, UseGuards, Delete, Put, Post, Get, Query, BadRequestException } from '@nestjs/common';
 import { Expert, Publication, Subscription, TypeCarburant } from '@prisma/client';
 import { User } from '@prisma/client';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { Notification } from '@prisma/client';
-
+import { ExpertRequest } from '@prisma/client';
+import { Res } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import { NotificationService } from 'src/notification/notification.service';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -26,8 +29,8 @@ interface AdminRequest extends Request {
 }
 interface CustomRequest extends Request {
   admin: {
-      ida: number; // Assurez-vous que le type de ida est correct
-      // Autres propriétés de l'administrateur si nécessaire
+    ida: number; // Assurez-vous que le type de ida est correct
+    // Autres propriétés de l'administrateur si nécessaire
   }
 }
 @UseGuards(AdminGuard)
@@ -35,7 +38,7 @@ interface CustomRequest extends Request {
 export class AdminController {
   prismaService: any;
   authService: any;
-  constructor(private readonly adminService: AdminService) { }
+  constructor(private readonly adminService: AdminService, private readonly notificationService: NotificationService) { }
 
   @UseGuards(AdminGuard)
   @Get("ListeUsers")
@@ -152,17 +155,44 @@ export class AdminController {
     @Request() req: any,
     @Body() updateAccountDto: UpdateAccountDto,
   ): Promise<any> {
-    const adminId = req.user.sub; 
-    console.log("Admin",req.user)
-    
+    const adminId = req.user.sub;
+    console.log("Admin", req.user)
+
     return this.adminService.updateAdmin(adminId, updateAccountDto);
   }
   @UseGuards(AdminGuard)
   @Get('notifications')
-  async getAdminNotifications( @Request() req: any): Promise<Notification[]> {
-    const adminId = req.user.sub; 
-    console.log("Admin",req.user)
+  async getAdminNotifications(@Request() req: any): Promise<Notification[]> {
+    const adminId = req.user.sub;
+    console.log("Admin", req.user)
     return this.adminService.getAdminNotifications(adminId);
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('notifications/:id')
+  async getNotificationByIdAndMarkAsRead(@Param('id') id: number): Promise<Notification> {
+    const notification = await this.adminService.getNotificationByIdAndMarkAsRead(id);
+    return notification;
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('notifications/:id/cv')
+  async getCVFromNotification(@Param('id') id: number, @Res() res): Promise<void> {
+    const notification = await this.adminService.getNotificationByIdAndMarkAsRead(id);
+    const notificationContent = JSON.parse(notification.content);
+    const cvLink = notificationContent.cvLink;
+
+    try {
+      // Récupérer le contenu du fichier CV à partir du lien
+      const cvContent = await this.notificationService.getCVFromLink(cvLink);
+      res.sendFile(cvContent.path, { root: '.' });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        res.status(404).send(error.message);
+      } else {
+        res.status(500).send('Une erreur interne s\'est produite');
+      }
+    }
   }
 
   @UseGuards(AdminGuard)
@@ -179,16 +209,22 @@ export class AdminController {
     return { success };
   }
 
-@UseGuards(AdminGuard)
-@Get('experts')
-async getAllExperts(): Promise<Expert[]> {
+  @UseGuards(AdminGuard)
+  @Get('experts')
+  async getAllExperts(): Promise<Expert[]> {
     return this.adminService.getAllExperts();
-}
-@UseGuards(AdminGuard)
-@Get('experts/:id')
-async getExpertById(@Param('id') id: number): Promise<Expert> {
+  }
+  @UseGuards(AdminGuard)
+  @Get('experts/:id')
+  async getExpertById(@Param('id') id: number): Promise<Expert> {
     return this.adminService.getExpertById(id);
-}
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('expert-requests')
+  async getAllExpertRequests(): Promise<ExpertRequest[]> {
+    return this.adminService.getAllExpertRequests();
+  }
 
 
 
@@ -218,7 +254,7 @@ async getExpertById(@Param('id') id: number): Promise<Expert> {
     throw new UnauthorizedException('Vous devez être connecté en tant qu\'administrateur pour effectuer cette opération.');
   }*/
 
-  }
+}
 
 
 

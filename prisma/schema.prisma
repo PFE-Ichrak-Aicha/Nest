@@ -317,5 +317,4 @@ model Notification{
   expert    Expert?  @relation(fields: [expertId], references: [ide])
   expertId  Int?
 
-
 }

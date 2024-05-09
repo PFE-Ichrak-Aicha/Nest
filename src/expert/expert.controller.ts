@@ -1,9 +1,7 @@
 import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req } from '@nestjs/common';
 import * as multer from 'multer';
-import { diskStorage } from 'multer';
 import { ExpertService } from './expert.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { CreateExpertDto } from 'dto/createExpertDto';
 import { FormExpertDto } from 'dto/formExpertDto';
 import { MailerService } from 'src/mailer/mailer.service';
 import { Socket } from 'socket.io';
@@ -31,7 +29,7 @@ export class ExpertController {
     return this.expertService.createExpertRequest(requestData, cv.originalname, client);
   }
 
-  @Get('demand/:id')
+  /*@Get('demand/:id')
   async getExpertRequest(@Param('id') id: number) {
     return this.expertService.getExpertRequest(id);
   }
@@ -48,7 +46,7 @@ export class ExpertController {
   @Delete('demand/:id')
   async deleteExpertRequest(@Param('id') id: number) {
     return this.expertService.deleteExpertRequest(id);
-  }
+  }*/
 
 
  

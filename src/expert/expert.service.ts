@@ -14,21 +14,6 @@ export class ExpertService {
 
   async createExpertRequest(requestData: FormExpertDto, cv: string, client: Socket) {
     try {
-
-
-      // console.log("hii")àào
-      // const existingRequest = await this.prisma.expertRequest.findFirst({
-      //   where: {
-      //     email: requestData.email,
-      //     createdAt: {
-      //       gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 jours en millisecondes
-      //     },
-      //   },
-      // });
-
-      // if (existingRequest) {
-      //   throw new Error("Vous avez déjà soumis une demande d'expertise dans les 7 derniers jours.");
-      // }
       const newRequest = await this.prisma.expertRequest.create({
         data: {
           firstName: requestData.firstName,
@@ -49,13 +34,28 @@ export class ExpertService {
           admin: { connect: { ida: adminId } }
         }
       });
-      const notificationContent = JSON.stringify(requestData); // Convertir les données en JSON
+      // Générer le lien vers le fichier CV
+      const cvLink = `http://localhost:3000/uploads/certif/${cv}`;
 
-      console.log("here is notificationContent;", notificationContent)
-      await this.notificationService.createNotificationToAdmin(notificationContent, client);
+      // Créer le contenu de la notification avec le lien vers le CV
+      const notificationContent = {
+        firstName: requestData.firstName,
+        lastName: requestData.lastName,
+        email: requestData.email,
+        telephone: requestData.tel,
+        city: requestData.city,
+        cv: cv,
+        cvLink
+      };
+      const notificationContentString = JSON.stringify(notificationContent);
+      console.log("here is notificationContent;", notificationContentString)
+      await this.notificationService.createNotificationToAdmin(notificationContentString, client);
+      console.log("Notification sent to admin successfully.");
       return "Demande d'expertise créée avec succès et envoyée à l'administrateur.";
     } catch (error) {
+      console.error("Error creating expert request:", error);
       throw new Error(error);
+
     }
   }
 

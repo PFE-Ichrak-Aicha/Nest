@@ -36,9 +36,9 @@ export class NotificationGateway {
   }
 
   @SubscribeMessage('sendNotificationToAdmin')
-  sendNotificationToAdmin(content: string, client: Socket) {
+  sendNotificationToAdmin(content: any, client: Socket) {
     this.server.emit('notificationToAdmin', (res) => {
-      console.log('notification send with success', content)
+      console.log('notification send with success', content )
     });
 
   }
