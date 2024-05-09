@@ -306,7 +306,7 @@ model ExpertRequest {
 }
 model Notification{
   idn Int  @id @default(autoincrement())
-  content   String
+  content   String  @db.Text
   isRead Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

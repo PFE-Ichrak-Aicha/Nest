@@ -177,6 +177,11 @@ export class AdminController {
 
   @UseGuards(AdminGuard)
   @Get('notifications/:id/cv')
+async getCVFromNotification(@Param('id', ParseIntPipe) id: number, @Res() res): Promise<void> {
+    const cvContent = await this.adminService.getCVFromNotification(id);
+    res.sendFile(cvContent.path, { root: '.' });
+}
+ /* @Get('notifications/:id/cv')
   async getCVFromNotification(@Param('id') id: number, @Res() res): Promise<void> {
     const notification = await this.adminService.getNotificationByIdAndMarkAsRead(id);
     const notificationContent = JSON.parse(notification.content);
@@ -193,7 +198,7 @@ export class AdminController {
         res.status(500).send('Une erreur interne s\'est produite');
       }
     }
-  }
+  }*/
 
   @UseGuards(AdminGuard)
   @Post(':ider/confirm')
@@ -224,6 +229,12 @@ export class AdminController {
   @Get('expert-requests')
   async getAllExpertRequests(): Promise<ExpertRequest[]> {
     return this.adminService.getAllExpertRequests();
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('expert-request/:id')
+  async getExpertRequestByID(@Param('id') id:number): Promise <ExpertRequest>{
+    return this.adminService.getExpertRequestById(id);
   }
 
 

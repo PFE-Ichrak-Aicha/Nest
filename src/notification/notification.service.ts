@@ -26,12 +26,13 @@ export class NotificationService {
                 title: 'Nouvelle demande d\'expertise',
                 body: `Une nouvelle demande d'expertise a été créée par ${content.firstName} ${content.lastName}.`,
                 data: {
-                    firstName: content.firstName,
+                firstName: content.firstName,
                 lastName: content.lastName,
                 email: content.email,
                 telephone: content.telephone,
                 city: content.city,
-                cvLink: content.cvLink
+                cvLink: content.cvLink,
+                //notificationContent,
                 }
             };
        // try {
@@ -51,7 +52,7 @@ export class NotificationService {
         }
         }
 
-    async getCVFromLink(cvLink: string): Promise<{ path: string }> {
+    /*async getCVFromLink(cvLink: string): Promise<{ path: string }> {
         try {
             // Extraire le nom du fichier CV à partir du lien
             const cvFileName = cvLink.split('/').pop();
@@ -64,5 +65,5 @@ export class NotificationService {
             console.error('Erreur lors de la récupération du CV :', error);
             throw new Error('Impossible de récupérer le CV.');
         }
-    }
+    }*/
     }

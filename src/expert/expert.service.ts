@@ -47,11 +47,12 @@ export class ExpertService {
         cv: cv,
         cvLink
       };
-      const notificationContentString = JSON.stringify(notificationContent);
-      console.log("here is notificationContent;", notificationContentString)
-      await this.notificationService.createNotificationToAdmin(notificationContentString, client);
+    //  const notificationContentString = JSON.stringify(notificationContent);
+      console.log("here is notificationContent;", JSON.stringify(notificationContent))
+      await this.notificationService.createNotificationToAdmin(notificationContent, client);
       console.log("Notification sent to admin successfully.");
       return "Demande d'expertise créée avec succès et envoyée à l'administrateur.";
+     
     } catch (error) {
       console.error("Error creating expert request:", error);
       throw new Error(error);

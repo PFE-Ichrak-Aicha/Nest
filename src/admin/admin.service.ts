@@ -10,6 +10,7 @@ import { UpdateAccountDto } from 'dto/updateAccountDto';
 import * as bcrypt from 'bcrypt';
 import { Notification } from '@prisma/client';
 import { ExpertRequest } from '@prisma/client';
+import { join } from 'path';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -308,6 +309,25 @@ export class AdminService {
         console.error('Error getting and marking notification as read:', error);
         throw new Error('Failed to get and mark notification as read.');
     }
+}async getCVFromNotification(notificationId: number): Promise<{ path: string }> {
+  const notification = await this.prisma.notification.findUnique({
+      where: { idn: notificationId },
+  });
+
+  if (!notification || !notification.content) {
+      throw new NotFoundException('Notification not found or missing content');
+  }
+
+  const content = JSON.parse(notification.content);
+  const cvLink = content.cvLink;
+
+  // Construire le chemin complet du fichier CV
+  const cvFilePath = join(__dirname, '..', 'uploads', 'certif', cvLink);
+  if (!cvFilePath) {
+    throw new NotFoundException('CV not found');
+}
+
+return { path: cvFilePath };
 }
 
   async confirmRequest(expertReqId: any): Promise<boolean> {
@@ -388,6 +408,13 @@ async getExpertById(ide: any): Promise<Expert> {
 
 async getAllExpertRequests(): Promise<ExpertRequest[]> {
   return this.prismaService.expertRequest.findMany();
+}
+
+async getExpertRequestById(ider:any): Promise <ExpertRequest>{
+  let id = parseInt(ider, 10);
+  return this.prismaService.expertRequest.findUnique({
+   where: {ider: id}
+  })
 }
 
 
