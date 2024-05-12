@@ -22,8 +22,11 @@ export class ExpertService {
           telephone: requestData.tel,
           cv: cv,
           city: requestData.city,
+          description : requestData.description,
+          cout: requestData.cout,
           status: "en attente",
-          admin: { connect: { ida: 1 } }
+          admin: { connect: { ida: 1 } },
+
         }
       });
       // Envoyer la demande à l'admin (ici on suppose qu'il y a un admin avec l'ID 1)
@@ -44,6 +47,8 @@ export class ExpertService {
         email: requestData.email,
         telephone: requestData.tel,
         city: requestData.city,
+        description : requestData.description,
+        cout: requestData.cout,
         cv: cv,
         cvLink
       };

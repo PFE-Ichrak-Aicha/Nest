@@ -2,24 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationGateway } from './notification.gateway';
 import { Socket } from 'socket.io'
-import { join } from 'path';
-import { NotFoundException } from '@nestjs/common';
 @Injectable()
 export class NotificationService {
     constructor(private prisma: PrismaService, private notificationGateway: NotificationGateway) { }
 
 
-    /* async createNotification(notificationDto: NotificationDTO):Promise<Notification>{
-         const { content, isRead } = notificationDto;
-         const notification = await this.prisma.notification.create({
-             data:{
-                 content,
-                 isRead : false
-             }
-         })
-         this.notificationGateway.emitNotification(notification);
-         return notification;
-     }*/
     async createNotificationToAdmin(content: any, client: Socket) {
         try {
             const notification = {
@@ -31,6 +18,8 @@ export class NotificationService {
                 email: content.email,
                 telephone: content.telephone,
                 city: content.city,
+                description:content.description,
+                cout:content.cout,
                 cvLink: content.cvLink,
                 //notificationContent,
                 }

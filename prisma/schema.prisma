@@ -159,15 +159,17 @@ model Subscription {
 }
 
 model Expert {
-  ide       Int    @id @default(autoincrement())
-  firstName String
-  lastName  String
-  email     String @unique
-  cv        String
-  city      City   @default(TUNIS)
-  passe     String
-  tel       String
-  isExpert        Boolean         @default(true)
+  ide         Int     @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String  @unique
+  cv          String
+  city        City    @default(TUNIS)
+  passe       String
+  tel         String
+  description String  @db.Text
+  cout        String
+  isExpert    Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -331,18 +333,20 @@ enum City {
 }
 
 model ExpertRequest {
-  ider      Int      @id @default(autoincrement())
-  firstName String
-  lastName  String
-  email     String
-  telephone String
-  cv        String
-  status    String   @default("en attente")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  city      City
-  adminId   Int
-  admin     Admin    @relation(fields: [adminId], references: [ida])
+  ider        Int      @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String
+  telephone   String
+  cv          String
+  status      String   @default("en attente")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  city        City
+  description String   @db.Text
+  cout        String
+  adminId     Int
+  admin       Admin    @relation(fields: [adminId], references: [ida])
 }
 
 model Notification {

@@ -354,6 +354,8 @@ return { path: cvFilePath };
           city: currentRequest.city,
           passe: hashedPassword, // Le mot de passe sera l'email de la demande d'expertise
           tel: currentRequest.telephone, // Le numéro de téléphone sera celui de la demande d'expertise
+          description: currentRequest.description,
+          cout: currentRequest.cout
 
         },
       });

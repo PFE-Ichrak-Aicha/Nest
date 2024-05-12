@@ -146,8 +146,8 @@ export class AuthService {
         // Retour de la réponse avec le token JWT et les informations de l'utilisateur
         return {
             token,
-            admin: {
-                ida: expert.ide, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
+            expert: {
+                ide: expert.ide, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
                 email: expert.email
             }
         };

@@ -34,6 +34,7 @@ export class FormExpertDto {
 
 
     status: string;
+    
 
     //@IsNotEmpty()
     // @IsString()
@@ -47,4 +48,8 @@ export class FormExpertDto {
     //@ValidateNested()
     // @IsFile()
     cv: Express.Multer.File;
+    @IsNotEmpty()
+    description :string
+    @IsNotEmpty()
+    cout : string
 }
