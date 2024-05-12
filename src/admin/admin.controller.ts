@@ -177,28 +177,28 @@ export class AdminController {
 
   @UseGuards(AdminGuard)
   @Get('notifications/:id/cv')
-async getCVFromNotification(@Param('id', ParseIntPipe) id: number, @Res() res): Promise<void> {
+  async getCVFromNotification(@Param('id', ParseIntPipe) id: number, @Res() res): Promise<void> {
     const cvContent = await this.adminService.getCVFromNotification(id);
     res.sendFile(cvContent.path, { root: '.' });
-}
- /* @Get('notifications/:id/cv')
-  async getCVFromNotification(@Param('id') id: number, @Res() res): Promise<void> {
-    const notification = await this.adminService.getNotificationByIdAndMarkAsRead(id);
-    const notificationContent = JSON.parse(notification.content);
-    const cvLink = notificationContent.cvLink;
-
-    try {
-      // Récupérer le contenu du fichier CV à partir du lien
-      const cvContent = await this.notificationService.getCVFromLink(cvLink);
-      res.sendFile(cvContent.path, { root: '.' });
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        res.status(404).send(error.message);
-      } else {
-        res.status(500).send('Une erreur interne s\'est produite');
-      }
-    }
-  }*/
+  }
+  /* @Get('notifications/:id/cv')
+   async getCVFromNotification(@Param('id') id: number, @Res() res): Promise<void> {
+     const notification = await this.adminService.getNotificationByIdAndMarkAsRead(id);
+     const notificationContent = JSON.parse(notification.content);
+     const cvLink = notificationContent.cvLink;
+ 
+     try {
+       // Récupérer le contenu du fichier CV à partir du lien
+       const cvContent = await this.notificationService.getCVFromLink(cvLink);
+       res.sendFile(cvContent.path, { root: '.' });
+     } catch (error) {
+       if (error instanceof NotFoundException) {
+         res.status(404).send(error.message);
+       } else {
+         res.status(500).send('Une erreur interne s\'est produite');
+       }
+     }
+   }*/
 
   @UseGuards(AdminGuard)
   @Post(':ider/confirm')
@@ -233,7 +233,7 @@ async getCVFromNotification(@Param('id', ParseIntPipe) id: number, @Res() res): 
 
   @UseGuards(AdminGuard)
   @Get('expert-request/:id')
-  async getExpertRequestByID(@Param('id') id:number): Promise <ExpertRequest>{
+  async getExpertRequestByID(@Param('id') id: number): Promise<ExpertRequest> {
     return this.adminService.getExpertRequestById(id);
   }
 

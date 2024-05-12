@@ -35,6 +35,15 @@ export class PubService {
             Ville: true,
             Adresse: true
           }
+        },
+        equippementPublications: {
+          include: {
+            equippement: {
+              select: {
+                name: true
+              }
+            }
+          }
         }
       },
       orderBy: {
@@ -66,14 +75,19 @@ export class PubService {
      return publication.equippements;
    }*/
 
-  async getPubById(pubId: number): Promise<Publication> {
+async getPubById(pubId: number) {
     const publication = await this.prismaService.publication.findUnique({
       where: { pubid: pubId },
+
     });
     if (!publication) throw new NotFoundException("Publication not found");
     return publication;
   }
-  async getPublicationWithEquipments(pubId: number) {
+
+
+
+
+ async getPublicationWithEquipments(pubId: number) {
     const publication = await this.prismaService.publication.findUnique({
       where: { pubid: pubId },
       include: {

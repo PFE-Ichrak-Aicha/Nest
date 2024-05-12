@@ -120,6 +120,38 @@ export class AuthService {
             }
         };
     }
+    async connexionExpert(connexionDto: connexionDto) {
+        const { email, MotDePasse } = connexionDto;
+        // Recherche de l'utilisateur dans la base de données
+        const expert = await this.prismaService.expert.findUnique({ where: { email} });
+        if (!expert || !expert.isExpert) { // Vérifier si l'utilisateur est administrateur
+            throw new ForbiddenException('Only administrators can access this endpoint');
+          }
+        // Vérification du mot de passe
+        const match = await bcrypt.compare(MotDePasse, expert.passe);
+        if (!match) {
+            throw new ForbiddenException("Incorrect password");
+        }
+
+        // Génération du token JWT
+        const payload = {
+            sub: expert.ide,
+            email: expert.email,
+            isAdmin: expert.isExpert,
+            ida: expert.ide
+    
+        };
+        const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
+
+        // Retour de la réponse avec le token JWT et les informations de l'utilisateur
+        return {
+            token,
+            admin: {
+                ida: expert.ide, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
+                email: expert.email
+            }
+        };
+    }
     async resetPassDemand(email: string): Promise<void> {
         const user = await this.prismaService.user.findUnique({ where: { email } });
         if (!user) throw new NotFoundException('User not found');

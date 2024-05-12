@@ -33,6 +33,12 @@ export class AuthController {
     return this.authService.connexionAdmin(connexionDto)
   }
 
+  
+  @Post("connexionExpert")
+  connexionExpert(@Body() connexionDto: connexionDto) {
+    return this.authService.connexionExpert(connexionDto)
+  }
+
   @Post('reset-pass-demand')
   async resetPassDemand(@Body() resetPassDemandDto: ResetPasseDemandDto, @Res() res: Response) {
     try {

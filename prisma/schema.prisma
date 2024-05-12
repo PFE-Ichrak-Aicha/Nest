@@ -29,8 +29,8 @@ model User {
   resetCode    String?
   publications Publication[] @relation("user_publications")
 
-  favorites  PublicationFavorite[]
-  expertises DemandExpertise[]
+  favorites     PublicationFavorite[]
+  expertises    DemandExpertise[]
   notifications Notification[]
   //subscriptions Subscription[]
 }
@@ -42,7 +42,7 @@ model Admin {
   PhotoProfil    String?
   isAdmin        Boolean         @default(true)
   expertRequests ExpertRequest[]
-  notifications Notification[]
+  notifications  Notification[]
 }
 
 model Publication {
@@ -167,26 +167,67 @@ model Expert {
   city      City   @default(TUNIS)
   passe     String
   tel       String
+  isExpert        Boolean         @default(true)
 
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-               
-  expertise      DemandExpertise[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expertise     DemandExpertise[]
   notifications Notification[]
-
 }
 
 model DemandExpertise {
-  idde        Int         @id @default(autoincrement())
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  status      String      @default("en attente")
+  idde        Int             @id @default(autoincrement())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  status      ExpertiseStatus @default(EN_ATTENTE)
   userId      Int
-  user        User        @relation(fields: [userId], references: [id])
+  user        User            @relation(fields: [userId], references: [id])
   pubId       Int
-  publication Publication @relation(fields: [pubId], references: [pubid])
-  expertId    Int         @unique
-  expert      Expert      @relation(fields: [expertId], references: [ide])
+  publication Publication     @relation(fields: [pubId], references: [pubid])
+  expertId    Int             @unique
+  expert      Expert          @relation(fields: [expertId], references: [ide])
+  rapport     Rapport?
+  rapportId   Int?            @unique
+}
+
+model Rapport {
+  idr               Int             @id @default(autoincrement())
+  expertise         DemandExpertise @relation(fields: [expertiseId], references: [idde])
+  expertiseId       Int             @unique
+  date_expertise    String
+  adresse_expertise String
+  lieu_expertise    String
+  expert            String
+  email_expert      String
+  tele_expert       String
+  nom_client        String
+  adresse_client    String
+  tel_client        String
+  email_client      String
+  marque_v          String
+  modele_v          String
+  motirisation_v    String
+  couleur_v         String
+  transmission_v    String
+  km_v              Int
+  his_prio          Int
+  immatriculation_v String
+  carrosserie       String
+  type_carburent    String
+  puissance         String
+  nb_place          Int
+  nb_porte          Int
+  commentaire_exp   String          @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+enum ExpertiseStatus {
+  EN_ATTENTE
+  ACCEPTE
+  REJETE
+  TERMINE
 }
 
 enum City {
@@ -302,12 +343,12 @@ model ExpertRequest {
   city      City
   adminId   Int
   admin     Admin    @relation(fields: [adminId], references: [ida])
-  
 }
-model Notification{
-  idn Int  @id @default(autoincrement())
-  content   String  @db.Text
-  isRead Boolean @default(false)
+
+model Notification {
+  idn       Int      @id @default(autoincrement())
+  content   String   @db.Text
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User?    @relation(fields: [userId], references: [id])
@@ -316,5 +357,4 @@ model Notification{
   adminId   Int?
   expert    Expert?  @relation(fields: [expertId], references: [ide])
   expertId  Int?
-
 }

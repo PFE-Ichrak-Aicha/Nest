@@ -64,8 +64,8 @@ export class PubController {
     return this.pubService.getAll()
   }
 
-  @Get(':id/equipments')
-  async getPublication(@Param('id', ParseIntPipe) pubId: number) {
+  @Get(':pubid')
+  async getPublication(@Param('pubid', ParseIntPipe) pubId: number) {
     const publication = await this.pubService.getPublicationWithEquipments(pubId);
     return publication;
   }
@@ -200,11 +200,11 @@ export class PubController {
     }
   }
   //Get PUB PAR ID
-  @Get(':pubid')
+ /* @Get(':pubid')
   //@UseGuards(AuthGuard('jwt'))
   async getPublicationById(@Param('pubid', ParseIntPipe) pubId: number) {
     return this.pubService.getPubById(pubId);
-  }
+  }*/
 
   //bch ta3mel creation d'une pub
   @UseGuards(UserGuard)
