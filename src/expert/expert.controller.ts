@@ -1,10 +1,14 @@
-import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req } from '@nestjs/common';
+import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req, UseGuards, Request, NotFoundException, ParseIntPipe, Res } from '@nestjs/common';
 import * as multer from 'multer';
 import { ExpertService } from './expert.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FormExpertDto } from 'dto/formExpertDto';
 import { MailerService } from 'src/mailer/mailer.service';
 import { Socket } from 'socket.io';
+import { ExpertGuard } from './expert.guard';
+import { UpdateAccountDto } from 'dto/updateAccountDto';
+import { Observable, from, of } from 'rxjs';
+import path, { join } from 'path';
 const certifStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/certif');
@@ -14,6 +18,18 @@ const certifStorage = multer.diskStorage({
   },
 });
 const upload = multer({ dest: 'uploads/certif' });
+export const storage = {
+  storage: multer.diskStorage({
+      destination: './uploads/profileimages',
+      filename: (req, file, cb) => {
+          console.log('Configuration du stockage :', file);
+          let splitedName = file.originalname.split('.')
+          const filename: string = splitedName[0];
+          const extention: string = file.mimetype.split('/')[1];;
+          cb(null, `${filename}.${extention}`);
+      }
+  }),
+}
 @Controller('expert')
 export class ExpertController {
   constructor(private readonly expertService: ExpertService, private readonly mailerService: MailerService) { }
@@ -47,9 +63,59 @@ export class ExpertController {
   async deleteExpertRequest(@Param('id') id: number) {
     return this.expertService.deleteExpertRequest(id);
   }*/
+@UseGuards(ExpertGuard)
+@Put("update-account")
+ update(@Req() request: any,
+    @Body() updateAccountDto: UpdateAccountDto,
+): Promise<any> {
+  const payload = request.user;
+  console.log("PAYYYYYY", payload)
+  const expertId = payload.sub;
+
+    return this.expertService.updateAccount(expertId, updateAccountDto)
+}
+@UseGuards(ExpertGuard)
+@Post('upload')
+@UseInterceptors(FileInterceptor('file', storage))
+async uploadFile(@UploadedFile() file, @Req() request: any): Promise<Observable<Object>> {
+    const payload = request.user;
+    const adminId = payload.sub;
+    const adminExists = await this.expertService.getExpertById(adminId);
+    if (!adminExists) {
+        throw new NotFoundException('Utilisateur non trouvé');
+    }
+    await this.expertService.associateProfileImage(adminId, file.filename);
+    return of({ imagePath: file.filename });
+}
+
+@Get('profile-image/:id')
+async findProfileImage(@Param('id', ParseIntPipe) adminId: number, @Res() res): Promise<void> {
+    // Récupérez le nom de l'image à partir de la base de données en fonction de l'ID de l'utilisateur
+    try {
+        const imageName = await this.expertService.getProfileImageName(adminId);
+        // Envoyez le fichier correspondant en réponse
+        res.sendFile(join(process.cwd(), 'uploads/profileimages/' + imageName));
+    }
+    catch (error) {
+        if (error instanceof NotFoundException) {
+            res.status(404).send(error.message);
+        } else {
+            res.status(500).send('Une erreur interne s\'est produite');
+        }
+    }
+}
 
 
- 
+@UseGuards(ExpertGuard)
+@Put('update-profile-image')
+@UseInterceptors(FileInterceptor('file', storage))
+updateProfileImage(@UploadedFile() file, @Req() request: any): Observable<Object> {
+    const payload = request.user;
+    const adminId = payload.sub;
+    return from(this.expertService.updateProfileImage(adminId, file.filename));
+}
+
+
  
 
 

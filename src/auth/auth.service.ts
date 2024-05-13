@@ -125,7 +125,7 @@ export class AuthService {
         // Recherche de l'utilisateur dans la base de données
         const expert = await this.prismaService.expert.findUnique({ where: { email} });
         if (!expert || !expert.isExpert) { // Vérifier si l'utilisateur est administrateur
-            throw new ForbiddenException('Only administrators can access this endpoint');
+            throw new ForbiddenException('Only experts can access this endpoint');
           }
         // Vérification du mot de passe
         const match = await bcrypt.compare(MotDePasse, expert.passe);
@@ -137,8 +137,8 @@ export class AuthService {
         const payload = {
             sub: expert.ide,
             email: expert.email,
-            isAdmin: expert.isExpert,
-            ida: expert.ide
+            isExpert: expert.isExpert,
+            ide: expert.ide
     
         };
         const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
@@ -168,23 +168,8 @@ export class AuthService {
        const url = `http://localhost:3000/auth/reset-pass-confirmation?email=${email}&code=${code}`;
        await this.mailerService.sendResetPass(email, url, code);
     }
-   /* async validatePasswordResetCode(validatePassCodeDto: ValidatePassCodeDto): Promise<{ user: User | null, error?: string }> {
-        const { code, email } = validatePassCodeDto;
-        const user = await this.prismaService.user.findUnique({ where: { email } });
-        if (!user) throw new NotFoundException('User not found');
-      
-        const isValid = speakeasy.totp.verify({
-            secret: this.configService.get('OTP_CODE'),
-            token: code,
-            digits: 5,
-            step: 60 * 15,
-            encoding: 'base32',
-        });
-      
-        if (!isValid) return { user: null, error: 'Invalid code' };
-      
-        return { user };
-      }*/
+  1
+
       async validatePasswordResetCode(code: string ,req :Request): Promise<{ data: string } | { error: string }> {
          const  email  = this.getEmailFromResetUrl(req);
         /* Récupérer l'email à partir de la demande de réinitialisation */
@@ -204,24 +189,6 @@ export class AuthService {
         return { data: 'Code is valid. You can now reset your password.' };
     }
    
-      /*async resetPassConfirmation(resetPassConfirmationDto: ResetPasseConfirmationDto): Promise<void> {
-        const { email, MotDePasseN } = resetPassConfirmationDto;
-        const user = await this.validatePasswordResetCode({ code: resetPassConfirmationDto.code, email });
-        if (!user.user) throw new UnauthorizedException('Invalid reset code');
-      
-        const hash = await bcrypt.hash(MotDePasseN, 10);
-        await this.prismaService.user.update({
-            where: { email },
-            data: { MotDePasse: hash },
-        });
-      }*/
-      /*async resetPassConfirmation(MotDePasseN: string, email: string): Promise<void> {
-        const hash = await bcrypt.hash(MotDePasseN, 10);
-        await this.prismaService.user.update({
-            where: { email },
-            data: { MotDePasse: hash },
-        });
-    }*/
     async resetPassConfirmation(MotDePasseN: string, email: string): Promise<void> {
         const hash = await bcrypt.hash(MotDePasseN, 10);
         await this.prismaService.user.update({
@@ -235,10 +202,30 @@ export class AuthService {
         if (!email) throw new Error('Email not found in reset URL');
         return email;
     }
-    /*async validatePasswordResetCode(validatePassCodeDto: ValidatePassCodeDto): Promise<{ data: string } | { error: string }> {
-        const { code, email } = validatePassCodeDto;
-        const user = await this.prismaService.user.findUnique({ where: { email } });
-        if (!user) throw new NotFoundException('User not found');
+
+    async resetPassDemandExpert(email: string): Promise<void> {
+        const expert = await this.prismaService.expert.findUnique({ where: { email } });
+        if (!expert) throw new NotFoundException('User not found');
+
+        // Générer un code à 5 chiffres qui expire toutes les 15 minutes
+        const code = speakeasy.totp({
+            secret: this.configService.get('OTP_CODE'),
+            digits: 5,
+            step: 60 * 15,
+            encoding: 'base32'
+        });
+
+       // const url = 'http://localhost:3000/auth/reset-pass-confirmation';
+       const url = `http://localhost:3000/auth/reset-pass-confirmation?email=${email}&code=${code}`;
+       await this.mailerService.sendResetPass(email, url, code);
+    }
+  
+  
+      async validatePasswordResetCodeExpert(code: string ,req :Request): Promise<{ data: string } | { error: string }> {
+         const  email  = this.getEmailFromResetUrl(req);
+        /* Récupérer l'email à partir de la demande de réinitialisation */
+        const expert = await this.prismaService.expert.findUnique({ where: { email } });
+        if (!expert) throw new NotFoundException('User not found');
 
         const isValid = speakeasy.totp.verify({
             secret: this.configService.get('OTP_CODE'),
@@ -252,94 +239,15 @@ export class AuthService {
 
         return { data: 'Code is valid. You can now reset your password.' };
     }
-    async resetPassConfirmation(resetPassConfirmationDto: ResetPasseConfirmationDto): Promise<void> {
-        const { email, MotDePasseN, code } = resetPassConfirmationDto;
-        await this.validatePasswordResetCode({ code: code, email });
+   
+    async resetPassConfirmationExpert(MotDePasseN: string, email: string): Promise<void> {
         const hash = await bcrypt.hash(MotDePasseN, 10);
-        await this.prismaService.user.update({
-            where: { email },
-            data: { MotDePasse: hash },
+        await this.prismaService.expert.update({
+          where: { email },
+          data: { passe: hash },
         });
-    }*/
-    /*async resetPasseDemand(resetPasseDemandDto: ResetPasseDemandDto) {
-        const { email } = resetPasseDemandDto;
-        const code = speakeasy.totp({
-          secret: this.configService.get("OTP_SECRET"),
-          digits: 5,
-          step: 60 * 15,
-          encoding: "base32"
-        });
-        await this.mailerService.sendResetPassRequest(email, code);
-        return { data: "Reset pass mail has been sent" };
-      }*/
-    /* async resetPasseDemand(email: string) {
-         const user = await this.prismaService.user.findUnique({ where: { email } });
-         if (!user) throw new NotFoundException('User not found');
- 
-         const code = this.generateResetCode();
-         await this.mailerService.sendResetCode(email, code);
-     }
- 
-     async validatePasswordResetCode(validatePassCodeDto: ValidatePassCodeDto) {
-         const { code, email } = validatePassCodeDto;
-         const user = await this.prismaService.user.findUnique({ where: { email } });
-         if (!user) throw new NotFoundException('User not found');
- 
-         const expectedCode = this.generateResetCode();
-         if (code !== expectedCode) throw new UnauthorizedException('Invalid reset code');
-     }
-     async resetPasseConfirmation(resetPasseConfirmationDto: ResetPasseConfirmationDto) {
-         const { email, MotDePasseN } = resetPasseConfirmationDto;
-         ////const secret = this.configService.get("OTP_SECRET");
-         //const token = speakeasy.totp({ secret, encoding: "base32" });
-         //if (token !== code) throw new UnauthorizedException("Invalid token");
-         const hash = await bcrypt.hash(MotDePasseN, 10);
-         await this.prismaService.user.update({
-             where: { email },
-             data: { MotDePasse: hash }
-         });
-         return { data: "Mot De Passe updated " };
-     }
-     /* async resetPasseDemand(resetPasseDemandDto: ResetPasseDemandDto) {
-          const { email } = resetPasseDemandDto;
-          const user = await this.prismaService.user.findUnique({ where: { email } })
-          if (!user) throw new NotFoundException('User not found')
-          const code = speakeasy.totp({
-              secret: this.configService.get("OTP_CODE"),
-              digits: 5,
-              step: 60 * 15,
-              encoding: "base32"
-          })
-          const url = "http://localhost:3000/auth/reset-pass-confirmation"
-          await this.mailerService.sendResetPass(email, url, code);
-          return { data: "Reset pass mail has been sent" }
-  
       }
-  
-      async resetPasseConfirmation(resetPasseConfirmationDto: ResetPasseConfirmationDto) {
-          const { code, email, MotDePasse } = resetPasseConfirmationDto
-          const user = await this.prismaService.user.findUnique({ where: { email } })
-          if (!user) throw new NotFoundException('User not found')
-          const match = speakeasy.totp.verify({
-              secret: this.configService.get('OTP_CODE'),
-              token: code,
-              digits: 5,
-              step: 60 * 15,
-              encoding: 'base32',
-          })
-          if (!match) throw new UnauthorizedException("Invalid token")
-          const hash = await bcrypt.hash(MotDePasse, 10)
-          await this.prismaService.user.update({ where: { email }, data: { MotDePasse: hash } })
-          return { data: "Mot De Passe updated " }
-      }*/
-    /*
-    async deleteAccount(userId: any, deleteAccountDto: DeleteAccountDto) {
-        const { MotDePasse } = deleteAccountDto
-        const user = await this.prismaService.user.findUnique({ where: { id: userId } })
-        if (!user) throw new NotFoundException('User not found')
-        const match = await bcrypt.compare(MotDePasse, user.MotDePasse);
-        if (!match) throw new ForbiddenException("Mot De Passe Incorrect")
-        await this.prismaService.user.delete({ where: { id: userId } });
-        return { data: " User successfully deleted " }
-    }*/
+      
+
+   
 }

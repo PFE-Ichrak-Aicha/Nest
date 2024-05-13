@@ -1,3 +1,4 @@
+import { City } from "@prisma/client"
 import { IsEmail, IsNotEmpty, IsOptional } from "class-validator"
 
 export class UpdateAccountDto {
@@ -27,5 +28,23 @@ export class UpdateAccountDto {
     CodePostal?: string
     @IsOptional()
     PhotoProfil?: string
+  
+    @IsOptional()
+    firstName: string;
+    @IsOptional()
+    lastName: string;
+    @IsOptional()
+    cv: string;
+    @IsOptional()
+    city: City;
+    @IsOptional()
+    passe: string;
+    @IsOptional()
+    tel: string 
+    @IsOptional()
+    description: string;
 
+    @IsOptional()
+    cout: string;
+  
 }

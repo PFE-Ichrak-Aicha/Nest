@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { CanActivate, ExecutionContext, Inject } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { Observable } from 'rxjs';
 import { ExpertJwtStrategy } from './expert-jwt.strategy';
 @Injectable()
 export class ExpertGuard implements CanActivate {

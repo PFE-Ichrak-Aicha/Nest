@@ -1,16 +1,11 @@
 import { Body, Controller, Req, UseGuards, Delete, Put, Post, UseInterceptors, UploadedFile, Get, Param, Res, ParseIntPipe, NotFoundException, UnauthorizedException, Query, BadRequestException } from '@nestjs/common';
-import { DeleteAccountDto } from 'dto/deleteAccountDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
-import { AdminUserCreateInput, UserService } from './user.service';
-import { AuthGuard } from '@nestjs/passport';
+import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { v4 as uuidv4 } from 'uuid';
 import path, { join } from 'path';
 import { Request, request } from 'express'
 import { Observable, from, map, of } from 'rxjs';
 import * as multer from 'multer';
-import { Publication, User } from '@prisma/client';
 import { UserWithoutPassword } from './user.service';
 import { UserGuard } from './user.guard';
 interface CustomRequest extends Request {
@@ -30,8 +25,8 @@ export const storage = {
             cb(null, `${filename}.${extention}`);
         }
     }),
-
 }
+
 @Controller('user')
 export class UserController {
     uploadService: any;

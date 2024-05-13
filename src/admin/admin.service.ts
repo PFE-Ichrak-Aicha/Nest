@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Admin, Expert, Publication, Subscription, User } from '@prisma/client';
+import { Admin, City, Expert, Publication, Subscription, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MailerService } from 'src/mailer/mailer.service';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
@@ -10,6 +10,7 @@ import { UpdateAccountDto } from 'dto/updateAccountDto';
 import * as bcrypt from 'bcrypt';
 import { Notification } from '@prisma/client';
 import { ExpertRequest } from '@prisma/client';
+
 import { join } from 'path';
 interface SearchPublicationsOptions {
   query?: string;
@@ -180,6 +181,14 @@ export class AdminService {
   async getTotalPublications(): Promise<number> {
     const totalPublications = await this.prismaService.publication.count();
     return totalPublications;
+  }
+ async getTotalExperts(): Promise<number>{
+    const totalExperts = await this.prismaService.expert.count();
+    return totalExperts;
+  }
+  async totalExpertsRequests(): Promise<number>{
+    const totalExpertsRequests = await this.prismaService.expertRequest.count();
+    return totalExpertsRequests;
   }
 
   async createSubscription(createSubscriptionDto: CreateSubscriptionDto) {
@@ -418,6 +427,160 @@ async getExpertRequestById(ider:any): Promise <ExpertRequest>{
    where: {ider: id}
   })
 }
+
+async updateAccount(payload: any, updateAccountDto: UpdateAccountDto) {
+
+  const adminId = payload;
+  const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
+  if (!admin) throw new NotFoundException('User not found');
+
+  let updateAccount:
+   Admin;
+  if (updateAccountDto.MotDePasse) {
+    const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
+    updateAccount = await this.prismaService.admin.update({
+      where: { ida: adminId },
+      data: { ...updateAccountDto, MotDePasse: hash },
+    });
+  } else {
+    // Si le mot de passe n'est pas fourni, mettez à jour les autres champs sans toucher au mot de passe
+    updateAccount = await this.prismaService.admin.update({
+      where: { ida: adminId },
+      data: { ...updateAccountDto },
+    });
+  }
+  return { message: 'Vos informations ont été mises à jour avec succès.' };
+}
+async getAdminById(payload: any): Promise<Admin> {
+  const adminId = payload;
+  const admin = await this.prismaService.admin.findUnique({
+    where: { ida: adminId },
+  });
+  if (!admin) {
+    throw new NotFoundException('User not found');
+  }
+  const { MotDePasse, ...userWithoutPassword } = admin;
+  return admin;
+}
+async associateProfileImage(adminId: number, profileImage: string): Promise<void> {
+  const existingAdmin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
+  if (!existingAdmin) {
+    throw new NotFoundException('Utilisateur non trouvé');
+  }
+  await this.prismaService.admin.update({
+    where: { ida: adminId },
+    data: { PhotoProfil: profileImage },
+  });
+}
+async getProfileImageName(adminId: number) {
+  // Recherchez l'utilisateur dans la base de données en fonction de son ID
+  try {
+    // Recherchez l'utilisateur dans la base de données en fonction de son ID
+    const admin = this.prismaService.admin.findUnique({
+      where: { ida: adminId },
+      select: { PhotoProfil: true } // Sélectionnez uniquement le champ PhotoProfil
+    });
+
+    if (!admin || !(await admin).PhotoProfil) {
+      throw new NotFoundException('Image de profil non trouvée pour cet utilisateur');
+    }
+
+    // Retournez le nom de l'image de profil
+    return (await admin).PhotoProfil;
+  } catch (error) {
+    throw error;
+  }
+}
+async updateProfileImage(payload: any, filename: string): Promise<Object> {
+  // Recherche de l'utilisateur dans la base de données
+  const adminId = typeof payload === 'number' ? payload : parseInt(payload);
+  const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
+  if (!admin) {
+    // Gérer le cas où l'utilisateur n'est pas trouvé
+    throw new NotFoundException('User not found');
+  }
+  try {
+    // Mettre à jour la colonne PhotoProfil de l'utilisateur avec le nom du fichier
+    const updatedUser = await this.prismaService.admin.update({
+      where: { ida: adminId },
+      data: { PhotoProfil: filename },
+    });
+
+    return { message: 'Profile image updated successfully' };
+  } catch (error) {
+    // Gérer les erreurs potentielles
+    throw new Error('Failed to update profile image');
+  }
+}
+
+async searchExperts(key: string) {
+  const keyword = key
+    ? {
+      OR: [
+        { firstName: { contains: key } },
+        { lastName: { contains: key } },
+        { email: { contains: key } },
+       // { Ville: { contains: key } },
+        //{ CodePostal: { contains: key } },
+       // { Adresse: { contains: key } },
+        //{ NumTel: { contains: key } },
+      ],
+    }
+    : {};
+
+  return this.prismaService.expert.findMany({
+    where: keyword,
+    select: {
+      firstName: true,
+      lastName: true,
+      email: true,
+      tel: true,
+      description: true,
+      cout: true,
+      city: true,
+    },
+  });
+}
+
+/*async searchExperts(key: string) {
+  const keyword = key
+    ? {
+        OR: [
+          { firstName: { contains: key } },
+          { lastName: { contains: key } },
+          { email: { contains: key } },
+          { city: key }, // Utilisez directement la valeur de la ville pour la recherche exacte
+        ],
+      }
+    : {};
+
+  return this.prismaService.expert.findMany({
+    where: {
+      AND: [
+        keyword.OR.length > 0 ? { OR: keyword.OR } : {}, // Utilisez AND pour combiner les filtres
+        { isExpert: true }, // Assurez-vous de ne récupérer que les experts
+      ],
+    },
+    select: {
+      ide: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      cv: true,
+      city: true,
+      tel: true,
+      description: true,
+      cout: true,
+      PhotoProfil: true,
+    },
+  });
+}*/
+
+
+
+
+
+
 
 
 
