@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, InternalServerErrorException, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, InternalServerErrorException, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { PubService } from './pub.service';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from 'src/user/user.service';
@@ -7,12 +7,13 @@ import { CreatePubDto } from 'dto/createPubDto';
 import { Request } from 'express';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { MediaService } from 'src/media/media.service';
-import { Publication } from '@prisma/client';
+import { BoiteVitesse, City, Publication, Sellerie, TypeCarburant } from '@prisma/client';
 import * as multer from 'multer';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PubFilterDto } from 'dto/pubFilterDto';
 import { Response } from 'express';
 import { UserGuard } from 'src/user/user.guard';
+import { AdminService } from 'src/admin/admin.service';
 
 export const publicationStorage = {
   imageStorage: multer.diskStorage({
@@ -57,7 +58,7 @@ function checkFileType(file, cb) {
 @Controller('pubs')
 export class PubController {
   publicationService: any;
-  constructor(private readonly pubService: PubService, private readonly mediaService: MediaService, private readonly userService: UserService, private readonly prismaService: PrismaService) { }
+  constructor(private readonly pubService: PubService, private readonly mediaService: MediaService, private readonly userService: UserService, private readonly prismaService: PrismaService, private readonly adminService : AdminService) { }
 
   @Get()
   getAll() {
@@ -91,37 +92,38 @@ export class PubController {
 
   //Search 
   @Get('search')
-  async searchPublications(@Query(ValidationPipe) filterDto: PubFilterDto): Promise<Publication[]> {
-    if (!filterDto.marque &&
-      !filterDto.model &&
-      !filterDto.anneeMin &&
-      !filterDto.anneeMax &&
-      !filterDto.nombrePlace &&
-      !filterDto.kilometrageMin &&
-      !filterDto.kilometrageMax &&
-      !filterDto.prixMin &&
-      !filterDto.prixMax &&
-      filterDto.typeCarburant == null &&
-      filterDto.couleur == null &&
-      filterDto.city == null &&
-      filterDto.boiteVitesse == null &&
-      filterDto.transmission == null &&
-      filterDto.sellerie == null &&
-      filterDto.equippements == null
-    ) {
-      return this.pubService.getAll();
-    }
-
-    return this.pubService.searchPublications(filterDto);
+  async searchPublicationsByQuery(
+    @Query('q') query: string,
+    @Query('marque') marque: string,
+    @Query('model') model: string,
+    @Query('couleur') couleur: string,
+    @Query('anneeMin') anneeMin: string,
+    @Query('anneeMax') anneeMax: string,
+    @Query('nombrePlace') nombrePlace: string,
+    @Query('prixMin') prixMin: string,
+    @Query('prixMax') prixMax: string,
+    @Query('city') city: City,
+    @Query('boiteVitesse') boiteVitesse: BoiteVitesse,
+    @Query('typeCarburant') typeCarburant: string,
+    @Query('sellerie') sellerie: Sellerie,
+    @Query('equippement') equippement: string,
+  ): Promise<Publication[]> {
+    const anneeMinNumber = parseInt(anneeMin);
+    const anneeMaxNumber = parseInt(anneeMax);
+    const nombrePlaceNumber = parseInt(nombrePlace);
+    const prixMinNumber = parseInt(prixMin);
+    const prixMaxNumber = parseInt(prixMax);
+    
+    return await this.adminService.searchPublications(query, marque, model, couleur, anneeMinNumber, anneeMaxNumber, nombrePlaceNumber, prixMinNumber, prixMaxNumber , city, boiteVitesse, typeCarburant, sellerie, equippement);
+    
   }
-
   //yraja3lk marques li 3ana fi lbase
   @Get('marques')
-  async getAllBrands(): Promise<string[]> {
-    return this.pubService.getAllMarques();
+  async getAllMarques(): Promise<string[]> {
+    return this.publicationService.getAllMarques();
   }
 
-  //yraja3lk models li 3ana fi lbase
+  //yraja3lk models li 3ana fi lbase  
   @Get('models')
   async getAllModels(): Promise<string[]> {
     return this.pubService.getAllModels();
@@ -342,6 +344,14 @@ export class PubController {
   async getSubscriptionById(@Param('ids', ParseIntPipe) id: number) {
     return this.pubService.getSubscriptionById(id);
   }
+
+  /*@Get('chercher')
+  chercher(@Query('key')key: string){
+    if(key){
+      return this.pubService.chercher(key);
+    }
+    throw new BadRequestException('Missing key query parameter')
+  }*/
 
 }
 

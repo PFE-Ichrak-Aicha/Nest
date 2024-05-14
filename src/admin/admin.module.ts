@@ -5,6 +5,7 @@ import { AdminJwtStrategy } from 'src/auth/admin-jwt.strategy';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationModule } from 'src/notification/notification.module';
+import { PubService } from 'src/pub/pub.service';
 
 @Module({
   
@@ -13,7 +14,7 @@ import { NotificationModule } from 'src/notification/notification.module';
       secret: 'SECRET_KEY', // replace with your own secret key
     }),NotificationModule
   ],
-  providers: [AdminService, PrismaService,AdminJwtStrategy],
+  providers: [AdminService, PrismaService,AdminJwtStrategy,PubService],
   controllers: [AdminController],
   exports: [],
 })

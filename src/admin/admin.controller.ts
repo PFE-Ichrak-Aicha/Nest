@@ -2,7 +2,7 @@ import { Controller, Param, ParseIntPipe, Request, UploadedFile, UseInterceptors
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post, Get, Query, BadRequestException } from '@nestjs/common';
-import { City, Expert, Publication, Subscription, TypeCarburant } from '@prisma/client';
+import { BoiteVitesse, City, Expert, Publication, Sellerie, Subscription, TypeCarburant } from '@prisma/client';
 import { User } from '@prisma/client';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
 import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
@@ -16,6 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Observable, from, of } from 'rxjs';
 import * as multer from 'multer';
 import path, { join } from 'path';
+import { PubService } from 'src/pub/pub.service';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -39,14 +40,14 @@ interface CustomRequest extends Request {
 }
 export const adstorage = {
   storage: multer.diskStorage({
-      destination: './uploads/profileimages',
-      filename: (req, file, cb) => {
-          console.log('Configuration du stockage :', file);
-          let splitedName = file.originalname.split('.')
-          const filename: string = splitedName[0];
-          const extention: string = file.mimetype.split('/')[1];;
-          cb(null, `${filename}.${extention}`);
-      }
+    destination: './uploads/profileimages',
+    filename: (req, file, cb) => {
+      console.log('Configuration du stockage :', file);
+      let splitedName = file.originalname.split('.')
+      const filename: string = splitedName[0];
+      const extention: string = file.mimetype.split('/')[1];;
+      cb(null, `${filename}.${extention}`);
+    }
   }),
 }
 
@@ -55,7 +56,7 @@ export const adstorage = {
 export class AdminController {
   prismaService: any;
   authService: any;
-  constructor(private readonly adminService: AdminService, private readonly notificationService: NotificationService) { }
+  constructor(private readonly adminService: AdminService, private readonly notificationService: NotificationService, private readonly pubService :PubService) { }
 
   @UseGuards(AdminGuard)
   @Get("ListeUsers")
@@ -87,8 +88,28 @@ export class AdminController {
   @Get("search-publications")
   async searchPublicationsByQuery(
     @Query('q') query: string,
+    @Query('marque') marque: string,
+    @Query('model') model: string,
+    @Query('couleur') couleur: string,
+    @Query('anneeMin') anneeMin: string,
+    @Query('anneeMax') anneeMax: string,
+    @Query('nombrePlace') nombrePlace: string,
+    @Query('prixMin') prixMin: string,
+    @Query('prixMax') prixMax: string,
+    @Query('city') city: City,
+    @Query('boiteVitesse') boiteVitesse: BoiteVitesse,
+    @Query('typeCarburant') typeCarburant: string,
+    @Query('sellerie') sellerie: Sellerie,
+    @Query('equippement') equippement: string,
   ): Promise<Publication[]> {
-    return await this.adminService.searchPublications(query);
+    const anneeMinNumber = parseInt(anneeMin);
+    const anneeMaxNumber = parseInt(anneeMax);
+    const nombrePlaceNumber = parseInt(nombrePlace);
+    const prixMinNumber = parseInt(prixMin);
+    const prixMaxNumber = parseInt(prixMax);
+    
+    return await this.adminService.searchPublications(query, marque, model, couleur, anneeMinNumber, anneeMaxNumber, nombrePlaceNumber, prixMinNumber, prixMaxNumber , city, boiteVitesse, typeCarburant, sellerie, equippement);
+    
   }
 
 
@@ -130,7 +151,7 @@ export class AdminController {
   }
 
   //mochkla
- 
+
   @Get("subscriptions")
   async getAllSubscriptions(): Promise<Partial<Subscription>[]> {
     const Subscriptions = await this.adminService.getAllSubscriptions();
@@ -229,64 +250,64 @@ export class AdminController {
   @UseGuards(AdminGuard)
   @Put("update_adaccount")
   update(@Req() request: any,
-  @Body() updateAccountDto: UpdateAccountDto,
-): Promise<any> {
-  const payload = request.user;
-  console.log("PAYYYYYY", payload)
-  const adminId = payload.sub;
-  return this.adminService.updateAccount(adminId, updateAccountDto)
-}
+    @Body() updateAccountDto: UpdateAccountDto,
+  ): Promise<any> {
+    const payload = request.user;
+    console.log("PAYYYYYY", payload)
+    const adminId = payload.sub;
+    return this.adminService.updateAccount(adminId, updateAccountDto)
+  }
 
-@UseGuards(AdminGuard)
-@Post('upload')
-@UseInterceptors(FileInterceptor('file', adstorage))
-async uploadFile(@UploadedFile() file, @Req() request: any): Promise<Observable<Object>> {
+  @UseGuards(AdminGuard)
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file', adstorage))
+  async uploadFile(@UploadedFile() file, @Req() request: any): Promise<Observable<Object>> {
     const payload = request.user;
     const adminId = payload.sub;
     const adminExists = await this.adminService.getAdminById(adminId);
     if (!adminExists) {
-        throw new NotFoundException('Utilisateur non trouvé');
+      throw new NotFoundException('Utilisateur non trouvé');
     }
     await this.adminService.associateProfileImage(adminId, file.filename);
     return of({ imagePath: file.filename });
-}
+  }
 
-@Get('profile-image/:id')
-async findProfileImage(@Param('id', ParseIntPipe) adminId: number, @Res() res): Promise<void> {
+  @Get('profile-image/:id')
+  async findProfileImage(@Param('id', ParseIntPipe) adminId: number, @Res() res): Promise<void> {
     // Récupérez le nom de l'image à partir de la base de données en fonction de l'ID de l'utilisateur
     try {
-        const imageName = await this.adminService.getProfileImageName(adminId);
-        // Envoyez le fichier correspondant en réponse
-        res.sendFile(join(process.cwd(), 'uploads/profileimages/' + imageName));
+      const imageName = await this.adminService.getProfileImageName(adminId);
+      // Envoyez le fichier correspondant en réponse
+      res.sendFile(join(process.cwd(), 'uploads/profileimages/' + imageName));
     }
     catch (error) {
-        if (error instanceof NotFoundException) {
-            res.status(404).send(error.message);
-        } else {
-            res.status(500).send('Une erreur interne s\'est produite');
-        }
+      if (error instanceof NotFoundException) {
+        res.status(404).send(error.message);
+      } else {
+        res.status(500).send('Une erreur interne s\'est produite');
+      }
     }
-}
+  }
 
 
-@UseGuards(AdminGuard)
-@Put('update-profile-image')
-@UseInterceptors(FileInterceptor('file', adstorage))
-updateProfileImage(@UploadedFile() file, @Req() request: any): Observable<Object> {
+  @UseGuards(AdminGuard)
+  @Put('update-profile-image')
+  @UseInterceptors(FileInterceptor('file', adstorage))
+  updateProfileImage(@UploadedFile() file, @Req() request: any): Observable<Object> {
     const payload = request.user;
     const adminId = payload.sub;
     return from(this.adminService.updateProfileImage(adminId, file.filename));
-}
+  }
 
-/*@UseGuards(AdminGuard)
-  @Get("search-users")
-  searchexpert(@Query('key') key: string) {
-    if (key) {
-      return this.adminService.searchExperts(key);
-    }
-
-    throw new BadRequestException('Missing key query parameter');
-  }*/
+  /*@UseGuards(AdminGuard)
+    @Get("search-users")
+    searchexpert(@Query('key') key: string) {
+      if (key) {
+        return this.adminService.searchExperts(key);
+      }
+  
+      throw new BadRequestException('Missing key query parameter');
+    }*/
   @UseGuards(AdminGuard)
   @UseGuards(AdminGuard)
   @Get("search-experts")

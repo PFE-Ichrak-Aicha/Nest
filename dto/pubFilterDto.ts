@@ -5,68 +5,78 @@ import { Transform } from 'class-transformer';
 export class PubFilterDto {
   @IsString()
   @IsOptional()
-  marque: string;
+  marque?: string;
 
   @IsString()
   @IsOptional()
-  model: string;
+  model?: string;
 
 
   @IsOptional()
 
-  anneeMin: string;
-
-  @IsOptional()
-  anneeMax: string;
+  anneeMin?: string;
 
 
   @IsOptional()
- 
-  nombrePlace: string;
 
- 
+  anneeMax?: string;
+
+  //@IsNumber()
   @IsOptional()
-  kilometrageMin: string;
+  //@Transform(({ value }) => parseInt(value))
+  nombrePlace?: string;
 
 
-  @IsOptional()
-  kilometrageMax: string;
-
-
-  @IsOptional()
-  prixMin: string;
 
 
   @IsOptional()
-  prixMax: string;
+
+  kilometrageMin?:string;
+
+
+  @IsOptional()
+
+  kilometrageMax?: string;
+
+
+  @IsOptional()
+
+  prixMin?: string;
+
+
+  @IsOptional()
+  
+  prixMax?: string;
 
   @IsEnum(TypeCarburant)
   @IsOptional()
-  typeCarburant: TypeCarburant;
+  typeCarburant?: TypeCarburant;
 
   @IsString()
   @IsOptional()
-  couleur: string;
+  couleur?: string;
 
   @IsEnum(City) // Ajout du filtre pour la ville
   @IsOptional()
-  city: City;
+  city?: City;
 
   @IsEnum(BoiteVitesse) // Ajout du filtre pour la boîte de vitesse
   @IsOptional()
-  boiteVitesse: BoiteVitesse;
+  boiteVitesse?: BoiteVitesse;
 
   @IsString() // Ajout du filtre pour la transmission
   @IsOptional()
-  transmission: string;
+  transmission?: string;
 
   @IsEnum(Sellerie) // Ajout du filtre pour la sellerie
   @IsOptional()
-  sellerie: Sellerie;
+  sellerie?: Sellerie;
 
   //@IsString({ each: true }) // Ajout du filtre pour les équipements
   //@IsOptional()
   //equippements: string[];
+  @IsString({ each: true })
+  @IsOptional()
   equippements?: string[];
   orderByPrice: 'asc' | 'desc' | undefined;
   orderByKilometrage: 'asc' | 'desc' | undefined;

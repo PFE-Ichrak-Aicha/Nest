@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Res } from '@nestjs/common';
-import { City, Publication } from '@prisma/client';
+import { City, Publication, TypeCarburant } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -7,6 +7,7 @@ import { Prisma } from '@prisma/client';
 import { PubFilterDto } from 'dto/pubFilterDto';
 
 import { Response } from 'express'
+import { contains } from 'class-validator';
 const between = (start: number, end: number) => ({
   gte: start,
   lte: end,
@@ -265,95 +266,51 @@ async getPubById(pubId: number) {
     return updatedPublication;
   }
 
-
-
-  async searchPublications(filterDto: PubFilterDto): Promise<Publication[]> {
-    const {
-      marque,
-      model,
-      anneeMin,
-      anneeMax,
-      nombrePlace,
-      kilometrageMin,
-      kilometrageMax,
-      prixMin,
-      prixMax,
-      typeCarburant,
-      couleur,
-      city,
-      boiteVitesse,
-      transmission,
-      sellerie,
-      equippements,
-    } = filterDto;
-
-    const anneeMinInt = anneeMin ? parseInt(anneeMin) : undefined;
-    const anneeMaxInt = anneeMax ? parseInt(anneeMax) : undefined;
-    const nombreplaceInt = nombrePlace ? parseInt(nombrePlace) : undefined;
-    const kilometrageMinInt = kilometrageMin || 0;
-    const kilometrageMaxInt = kilometrageMax ? parseInt(kilometrageMax) : undefined
-    const prixMinInt = prixMin || 0;
-    const prixMaxInt = prixMax ? parseInt(prixMax) : undefined;
-
-    let cityInput: City | undefined;
-    if (city) {
-      const normalizedCity = city.toUpperCase();
-      const cityIndex = Object.keys(City).indexOf(normalizedCity);
-      if (cityIndex !== -1) {
-        cityInput = City[Object.keys(City)[cityIndex]];
-      }
-    }
-
-
-    //const cityArray = city ? city.split(',').map(c => c.toLowerCase()) : undefined;
-    //const cityEnumArray = cityArray ? cityArray.map(c => City[c as keyof typeof City]) : undefined;
+  async searchPublications(
+    query: string,
+    marque?: string,
+    model?: string,
+    couleur?: string,
+    anneeMin?: number,
+    anneeMax?: number,
+    nombrePlace?: number,
+    prixMin?: number,
+    prixMax?: number,
+    typeCarburant?: TypeCarburant,
+    kilometrageMin?: number,
+    kilometrageMax?: number,
+  ): Promise<Publication[]> {
     const publications = await this.prismaService.publication.findMany({
       where: {
-        marque: marque ? { equals: marque } : undefined,
-        model: model ? { equals: model } : undefined,
-        anneeFabrication: anneeMinInt && anneeMaxInt ? between(anneeMinInt, anneeMaxInt) : undefined,
-        nombrePlace: nombrePlace ? { equals: nombreplaceInt } : undefined,
-        kilometrage: {
-          gte: Number(kilometrageMinInt),
-          lte: kilometrageMaxInt,
-        },
-        prix: {
-          gte: Number(prixMinInt),
-          lte: prixMaxInt,
-        },
-        typeCarburant: typeCarburant ? { equals: typeCarburant } : undefined,
-        couleur: couleur ? { equals: couleur } : undefined,
-        city: cityInput ? { equals: cityInput } : undefined,
-        // city: city ? { equals: city } : undefined,
-        boiteVitesse: boiteVitesse ? { equals: boiteVitesse } : undefined,
-        transmission: transmission ? { equals: transmission } : undefined,
-        sellerie: sellerie ? { equals: sellerie } : undefined,
-        equippementPublications: equippements
-          ? {
-            some: {
-              equippement: {
-                name: { in: equippements },
-              },
-            },
-          }
-          : undefined,
+        
+        OR: [
+            { marque: { contains: marque } },
+            { model: { contains:model } },
+            { couleur: { contains: couleur } },
+            { anneeFabrication: { gte: anneeMin, lte: anneeMax } },
+            { nombrePlace: { gte: nombrePlace } },
+            { prix: { gte: prixMin, lte: prixMax } },
+            { typeCarburant: { equals: typeCarburant } },
+            { kilometrage: { gte: kilometrageMin, lte: kilometrageMax } },
+          ],
+        
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
     });
+  
     return publications;
   }
-
+ 
+  
 
   async getAllMarques(): Promise<string[]> {
-    const brands = await this.prismaService.publication.findMany({
-      distinct: ['marque'],
+    const marques = await this.prismaService.publication.findMany({
       select: {
         marque: true,
       },
+      distinct: ['marque'],
     });
-    return brands.map((pub) => pub.marque);
+    console.log(marques);
+    return marques.map((pub) => pub.marque.toString());
   }
 
 
@@ -685,7 +642,34 @@ async getPubById(pubId: number) {
       where: { ids: id },
     });
   }
+/*async chercher (key: string){
+  const keyword = key 
+  ?{
+    OR: [
+      {marque : { contains : key}},
+      {model : { contains : key}},
+      {nombrePlace  : { contains : key}},
+      {couleur  : { contains : key}},
+      {transmission : { contains : key}},
 
+      {carrassorie : { contains : key}},
+       // marque : { contains : key},
+      
+    ],
+  }
+  : {};
+  return this.prismaService.publication.findMany({
+    where: keyword,
+    select: {
+      marque : true,
+      model : true,
+      nombrePlace : true,
+      couleur : true,
+      transmission : true,
+      carrassorie : true,
+    },
+  });
+}*/
 
 
 

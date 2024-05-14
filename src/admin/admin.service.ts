@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Admin, City, Expert, Publication, Subscription, User } from '@prisma/client';
+import { Admin, BoiteVitesse, City, Expert, Publication, Sellerie, Subscription, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MailerService } from 'src/mailer/mailer.service';
 import { CreateSubscriptionDto } from 'dto/createSubscriptionDto';
@@ -10,7 +10,7 @@ import { UpdateAccountDto } from 'dto/updateAccountDto';
 import * as bcrypt from 'bcrypt';
 import { Notification } from '@prisma/client';
 import { ExpertRequest } from '@prisma/client';
-
+import { PubService } from 'src/pub/pub.service';
 import { join } from 'path';
 interface SearchPublicationsOptions {
   query?: string;
@@ -32,12 +32,12 @@ enum TypeCarburant {
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prismaService: PrismaService,private readonly mailerService: MailerService,private prisma: PrismaService) { }
+  constructor(private readonly prismaService: PrismaService, private readonly mailerService: MailerService, private prisma: PrismaService, private readonly pubService: PubService) { }
 
- /* async isAdmin(user: any): Promise<boolean> {
-    const admin = await this.prismaService.admin.findUnique({ where: { email: user.email } });
-    return admin !== undefined;
-  }*/
+  /* async isAdmin(user: any): Promise<boolean> {
+     const admin = await this.prismaService.admin.findUnique({ where: { email: user.email } });
+     return admin !== undefined;
+   }*/
   async getUsers(): Promise<Partial<User>[]> {
     const users = await this.prismaService.user.findMany({
       select: {
@@ -109,27 +109,84 @@ export class AdminService {
     marque?: string,
     model?: string,
     couleur?: string,
-    anneeFabrication?: number,
+    anneeMin?: number,
+    anneeMax?: number,
     nombrePlace?: number,
-    prix?: number,
-    typeCarburant?: TypeCarburant,
+    prixMin?: number,
+    prixMax?: number,
+    city?: City,
+    boiteVitesse?: BoiteVitesse,
+    typeCarburant?: string,
+    sellerie?: Sellerie,
+    equippement?: string,
   ): Promise<Publication[]> {
-    const publications = await this.prismaService.publication.findMany({
-      where: {
-        OR: [
-          { marque: { contains: query, } },
-          { model: { contains: query, } },
-          { couleur: { contains: query, } },
-          { anneeFabrication: { equals: anneeFabrication } },
-          { nombrePlace: { equals: nombrePlace } },
-          { prix: { equals: prix } },
-          { typeCarburant: { equals: typeCarburant } },
-        ],
+    const where: any = {
+      OR: []
+    };
+
+    if (marque) {
+      where.OR.push({ marque: { contains: marque } });
+    }
+    if (model) {
+      where.OR.push({ model: { contains: model } });
+    }
+    if (couleur) {
+      where.OR.push({ couleur: { contains: couleur } });
+    }
+    if (!isNaN(anneeMin) && !isNaN(anneeMax)) {
+      where.OR.push({ anneeFabrication: { gte: anneeMin, lte: anneeMax } });
+    }
+    if (!isNaN(nombrePlace)) {
+      where.OR.push({ nombrePlace: { equals: nombrePlace } });
+    }
+    if (!isNaN(prixMin) && !isNaN(prixMax)) {
+      where.OR.push({ prix: { gte: prixMin, lte: prixMax } });
+    }
+    if (city) {
+      where.OR.push({ city: { equals: city } });
+    }
+    if (boiteVitesse) {
+      where.OR.push({ boiteVitesse: { equals: boiteVitesse } });
+    }
+    if (typeCarburant) {
+      where.OR.push({ typeCarburant: { equals: typeCarburant } });
+    }
+    if (sellerie) {
+      where.OR.push({ sellerie: { equals: sellerie } });
+    }
+    if (equippement) {
+      where.equippements = { some: { name: { equals: equippement } } };
+    }
+   // const publications = await this.prismaService.publication.findMany({
+     // where
+   // });
+   const publications = await this.prismaService.publication.findMany({
+    where,
+    include: {
+      user: {
+        select: {
+          Nom: true,
+          Prenom: true,
+          email: true,
+          NumTel: true,
+          Ville: true,
+          Adresse: true
+        }
       },
-    });
+      equippementPublications: {
+        include: {
+          equippement: {
+            select: {
+              name: true
+            }
+          }
+        }
+      }
+    }
+  });
+   // const publications = await this.pubService.getAll();
     return publications;
   }
-
 
   async getPubById(pubId: number): Promise<Publication> {
     const publication = await this.prismaService.publication.findUnique({
@@ -182,11 +239,11 @@ export class AdminService {
     const totalPublications = await this.prismaService.publication.count();
     return totalPublications;
   }
- async getTotalExperts(): Promise<number>{
+  async getTotalExperts(): Promise<number> {
     const totalExperts = await this.prismaService.expert.count();
     return totalExperts;
   }
-  async totalExpertsRequests(): Promise<number>{
+  async totalExpertsRequests(): Promise<number> {
     const totalExpertsRequests = await this.prismaService.expertRequest.count();
     return totalExpertsRequests;
   }
@@ -247,32 +304,6 @@ export class AdminService {
     await this.prismaService.subscription.delete({ where: { ids } })
   52953081
   }*/
-  async updateAdmin(adminId: number, updateAccountDto: UpdateAccountDto) {
-    // Récupérer l'administrateur à partir de son ID
-    const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
-    if (!admin) {
-        throw new NotFoundException('Admin not found');
-    }
-
-    // Mettre à jour les informations de l'administrateur
-    let updateAccount: Admin;
-    if (updateAccountDto.MotDePasse) {
-        const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
-        updateAccount = await this.prismaService.admin.update({
-            where: { ida: adminId },
-            data: { ...updateAccountDto, MotDePasse: hash },
-        });
-    } else {
-        updateAccount = await this.prismaService.admin.update({
-            where: { ida: adminId },
-            data: { ...updateAccountDto },
-        });
-    }
-
-    // Retourner un message de succès après la mise à jour
-    return { message: 'Vos informations ont été mises à jour avec succès.' };
-}
-
 
   async getUserId(userId: number): Promise<Admin> {
     return this.prismaService.admin.findUnique({
@@ -284,7 +315,6 @@ export class AdminService {
     return user.isAdmin;
   }
 
-
   async getAdminNotifications(adminId: number): Promise<Notification[]> {
     return this.prismaService.notification.findMany({
       where: {
@@ -295,49 +325,49 @@ export class AdminService {
       }
     });
   }
-  
+
   async getNotificationByIdAndMarkAsRead(idn: any): Promise<Notification> {
     try {
-      let id = parseInt(idn,10)
-        const notification = await this.prismaService.notification.findUnique({
-            where: { idn: id }
-        });
+      let id = parseInt(idn, 10)
+      const notification = await this.prismaService.notification.findUnique({
+        where: { idn: id }
+      });
 
-        if (!notification) {
-            throw new Error(`Notification with ID ${id} not found.`);
-        }
+      if (!notification) {
+        throw new Error(`Notification with ID ${id} not found.`);
+      }
 
-        // Marquer la notification comme lue
-        await this.prismaService.notification.update({
-            where: { idn: id },
-            data: { isRead: true }
-        });
+      // Marquer la notification comme lue
+      await this.prismaService.notification.update({
+        where: { idn: id },
+        data: { isRead: true }
+      });
 
-        return notification;
+      return notification;
     } catch (error) {
-        console.error('Error getting and marking notification as read:', error);
-        throw new Error('Failed to get and mark notification as read.');
+      console.error('Error getting and marking notification as read:', error);
+      throw new Error('Failed to get and mark notification as read.');
     }
-}async getCVFromNotification(notificationId: number): Promise<{ path: string }> {
-  const notification = await this.prisma.notification.findUnique({
+  } async getCVFromNotification(notificationId: number): Promise<{ path: string }> {
+    const notification = await this.prisma.notification.findUnique({
       where: { idn: notificationId },
-  });
+    });
 
-  if (!notification || !notification.content) {
+    if (!notification || !notification.content) {
       throw new NotFoundException('Notification not found or missing content');
+    }
+
+    const content = JSON.parse(notification.content);
+    const cvLink = content.cvLink;
+
+    // Construire le chemin complet du fichier CV
+    const cvFilePath = join(__dirname, '..', 'uploads', 'certif', cvLink);
+    if (!cvFilePath) {
+      throw new NotFoundException('CV not found');
+    }
+
+    return { path: cvFilePath };
   }
-
-  const content = JSON.parse(notification.content);
-  const cvLink = content.cvLink;
-
-  // Construire le chemin complet du fichier CV
-  const cvFilePath = join(__dirname, '..', 'uploads', 'certif', cvLink);
-  if (!cvFilePath) {
-    throw new NotFoundException('CV not found');
-}
-
-return { path: cvFilePath };
-}
 
   async confirmRequest(expertReqId: any): Promise<boolean> {
     try {
@@ -408,173 +438,173 @@ return { path: cvFilePath };
 
   async getAllExperts(): Promise<Expert[]> {
     return this.prismaService.expert.findMany();
-}
-async getExpertById(ide: any): Promise<Expert> {
-  
-  let id = parseInt(ide, 10);
-  return this.prismaService.expert.findUnique({
+  }
+  async getExpertById(ide: any): Promise<Expert> {
+
+    let id = parseInt(ide, 10);
+    return this.prismaService.expert.findUnique({
       where: { ide: id }
-  });
-}
-
-async getAllExpertRequests(): Promise<ExpertRequest[]> {
-  return this.prismaService.expertRequest.findMany();
-}
-
-async getExpertRequestById(ider:any): Promise <ExpertRequest>{
-  let id = parseInt(ider, 10);
-  return this.prismaService.expertRequest.findUnique({
-   where: {ider: id}
-  })
-}
-
-async updateAccount(payload: any, updateAccountDto: UpdateAccountDto) {
-
-  const adminId = payload;
-  const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
-  if (!admin) throw new NotFoundException('User not found');
-
-  let updateAccount:
-   Admin;
-  if (updateAccountDto.MotDePasse) {
-    const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
-    updateAccount = await this.prismaService.admin.update({
-      where: { ida: adminId },
-      data: { ...updateAccountDto, MotDePasse: hash },
-    });
-  } else {
-    // Si le mot de passe n'est pas fourni, mettez à jour les autres champs sans toucher au mot de passe
-    updateAccount = await this.prismaService.admin.update({
-      where: { ida: adminId },
-      data: { ...updateAccountDto },
     });
   }
-  return { message: 'Vos informations ont été mises à jour avec succès.' };
-}
-async getAdminById(payload: any): Promise<Admin> {
-  const adminId = payload;
-  const admin = await this.prismaService.admin.findUnique({
-    where: { ida: adminId },
-  });
-  if (!admin) {
-    throw new NotFoundException('User not found');
+
+  async getAllExpertRequests(): Promise<ExpertRequest[]> {
+    return this.prismaService.expertRequest.findMany();
   }
-  const { MotDePasse, ...userWithoutPassword } = admin;
-  return admin;
-}
-async associateProfileImage(adminId: number, profileImage: string): Promise<void> {
-  const existingAdmin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
-  if (!existingAdmin) {
-    throw new NotFoundException('Utilisateur non trouvé');
+
+  async getExpertRequestById(ider: any): Promise<ExpertRequest> {
+    let id = parseInt(ider, 10);
+    return this.prismaService.expertRequest.findUnique({
+      where: { ider: id }
+    })
   }
-  await this.prismaService.admin.update({
-    where: { ida: adminId },
-    data: { PhotoProfil: profileImage },
-  });
-}
-async getProfileImageName(adminId: number) {
-  // Recherchez l'utilisateur dans la base de données en fonction de son ID
-  try {
+
+  async updateAccount(payload: any, updateAccountDto: UpdateAccountDto) {
+
+    const adminId = payload;
+    const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
+    if (!admin) throw new NotFoundException('User not found');
+
+    let updateAccount:
+      Admin;
+    if (updateAccountDto.MotDePasse) {
+      const hash = await bcrypt.hash(updateAccountDto.MotDePasse, 10);
+      updateAccount = await this.prismaService.admin.update({
+        where: { ida: adminId },
+        data: { ...updateAccountDto, MotDePasse: hash },
+      });
+    } else {
+      // Si le mot de passe n'est pas fourni, mettez à jour les autres champs sans toucher au mot de passe
+      updateAccount = await this.prismaService.admin.update({
+        where: { ida: adminId },
+        data: { ...updateAccountDto },
+      });
+    }
+    return { message: 'Vos informations ont été mises à jour avec succès.' };
+  }
+  async getAdminById(payload: any): Promise<Admin> {
+    const adminId = payload;
+    const admin = await this.prismaService.admin.findUnique({
+      where: { ida: adminId },
+    });
+    if (!admin) {
+      throw new NotFoundException('User not found');
+    }
+    const { MotDePasse, ...userWithoutPassword } = admin;
+    return admin;
+  }
+  async associateProfileImage(adminId: number, profileImage: string): Promise<void> {
+    const existingAdmin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
+    if (!existingAdmin) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+    await this.prismaService.admin.update({
+      where: { ida: adminId },
+      data: { PhotoProfil: profileImage },
+    });
+  }
+  async getProfileImageName(adminId: number) {
     // Recherchez l'utilisateur dans la base de données en fonction de son ID
-    const admin = this.prismaService.admin.findUnique({
-      where: { ida: adminId },
-      select: { PhotoProfil: true } // Sélectionnez uniquement le champ PhotoProfil
-    });
+    try {
+      // Recherchez l'utilisateur dans la base de données en fonction de son ID
+      const admin = this.prismaService.admin.findUnique({
+        where: { ida: adminId },
+        select: { PhotoProfil: true } // Sélectionnez uniquement le champ PhotoProfil
+      });
 
-    if (!admin || !(await admin).PhotoProfil) {
-      throw new NotFoundException('Image de profil non trouvée pour cet utilisateur');
+      if (!admin || !(await admin).PhotoProfil) {
+        throw new NotFoundException('Image de profil non trouvée pour cet utilisateur');
+      }
+
+      // Retournez le nom de l'image de profil
+      return (await admin).PhotoProfil;
+    } catch (error) {
+      throw error;
     }
-
-    // Retournez le nom de l'image de profil
-    return (await admin).PhotoProfil;
-  } catch (error) {
-    throw error;
   }
-}
-async updateProfileImage(payload: any, filename: string): Promise<Object> {
-  // Recherche de l'utilisateur dans la base de données
-  const adminId = typeof payload === 'number' ? payload : parseInt(payload);
-  const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
-  if (!admin) {
-    // Gérer le cas où l'utilisateur n'est pas trouvé
-    throw new NotFoundException('User not found');
-  }
-  try {
-    // Mettre à jour la colonne PhotoProfil de l'utilisateur avec le nom du fichier
-    const updatedUser = await this.prismaService.admin.update({
-      where: { ida: adminId },
-      data: { PhotoProfil: filename },
-    });
-
-    return { message: 'Profile image updated successfully' };
-  } catch (error) {
-    // Gérer les erreurs potentielles
-    throw new Error('Failed to update profile image');
-  }
-}
-
-async searchExperts(key: string) {
-  const keyword = key
-    ? {
-      OR: [
-        { firstName: { contains: key } },
-        { lastName: { contains: key } },
-        { email: { contains: key } },
-       // { Ville: { contains: key } },
-        //{ CodePostal: { contains: key } },
-       // { Adresse: { contains: key } },
-        //{ NumTel: { contains: key } },
-      ],
+  async updateProfileImage(payload: any, filename: string): Promise<Object> {
+    // Recherche de l'utilisateur dans la base de données
+    const adminId = typeof payload === 'number' ? payload : parseInt(payload);
+    const admin = await this.prismaService.admin.findUnique({ where: { ida: adminId } });
+    if (!admin) {
+      // Gérer le cas où l'utilisateur n'est pas trouvé
+      throw new NotFoundException('User not found');
     }
-    : {};
+    try {
+      // Mettre à jour la colonne PhotoProfil de l'utilisateur avec le nom du fichier
+      const updatedUser = await this.prismaService.admin.update({
+        where: { ida: adminId },
+        data: { PhotoProfil: filename },
+      });
 
-  return this.prismaService.expert.findMany({
-    where: keyword,
-    select: {
-      firstName: true,
-      lastName: true,
-      email: true,
-      tel: true,
-      description: true,
-      cout: true,
-      city: true,
-    },
-  });
-}
+      return { message: 'Profile image updated successfully' };
+    } catch (error) {
+      // Gérer les erreurs potentielles
+      throw new Error('Failed to update profile image');
+    }
+  }
 
-/*async searchExperts(key: string) {
-  const keyword = key
-    ? {
+  async searchExperts(key: string) {
+    const keyword = key
+      ? {
         OR: [
           { firstName: { contains: key } },
           { lastName: { contains: key } },
           { email: { contains: key } },
-          { city: key }, // Utilisez directement la valeur de la ville pour la recherche exacte
+          // { Ville: { contains: key } },
+          //{ CodePostal: { contains: key } },
+          // { Adresse: { contains: key } },
+          //{ NumTel: { contains: key } },
         ],
       }
-    : {};
+      : {};
 
-  return this.prismaService.expert.findMany({
-    where: {
-      AND: [
-        keyword.OR.length > 0 ? { OR: keyword.OR } : {}, // Utilisez AND pour combiner les filtres
-        { isExpert: true }, // Assurez-vous de ne récupérer que les experts
-      ],
-    },
-    select: {
-      ide: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      cv: true,
-      city: true,
-      tel: true,
-      description: true,
-      cout: true,
-      PhotoProfil: true,
-    },
-  });
-}*/
+    return this.prismaService.expert.findMany({
+      where: keyword,
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+        tel: true,
+        description: true,
+        cout: true,
+        city: true,
+      },
+    });
+  }
+
+  /*async searchExperts(key: string) {
+    const keyword = key
+      ? {
+          OR: [
+            { firstName: { contains: key } },
+            { lastName: { contains: key } },
+            { email: { contains: key } },
+            { city: key }, // Utilisez directement la valeur de la ville pour la recherche exacte
+          ],
+        }
+      : {};
+  
+    return this.prismaService.expert.findMany({
+      where: {
+        AND: [
+          keyword.OR.length > 0 ? { OR: keyword.OR } : {}, // Utilisez AND pour combiner les filtres
+          { isExpert: true }, // Assurez-vous de ne récupérer que les experts
+        ],
+      },
+      select: {
+        ide: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        cv: true,
+        city: true,
+        tel: true,
+        description: true,
+        cout: true,
+        PhotoProfil: true,
+      },
+    });
+  }*/
 
 
 
