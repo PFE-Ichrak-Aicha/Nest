@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import * as multer from 'multer';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Socket } from 'socket.io'
@@ -8,7 +8,8 @@ import { NotificationService } from 'src/notification/notification.service';
 import { MailerService } from 'src/mailer/mailer.service';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import * as bcrypt from 'bcrypt';
-import { Expert } from '@prisma/client';
+import { DemandExpertise, Expert, ExpertiseStatus, Rapport } from '@prisma/client';
+import { CreateRapportDto } from 'dto/createRapportDto';
 
 
 @Injectable()
@@ -159,7 +160,66 @@ async updateProfileImage(payload: any, filename: string): Promise<Object> {
 }
 
 
+async updateDemandeStatus(demandeId: number, status: ExpertiseStatus, expertId: number): Promise<DemandExpertise> {
+  const demande = await this.prismaService.demandExpertise.findUnique({
+    where: { idde: demandeId },
+  });
 
+  if (!demande) {
+    throw new NotFoundException('Demande d\'expertise non trouvée.');
+  }
+
+  if ((demande.status === ExpertiseStatus.ACCEPTE && status === ExpertiseStatus.REJETE) ||
+      (demande.status === ExpertiseStatus.REJETE && status === ExpertiseStatus.ACCEPTE)) {
+    throw new BadRequestException('Vous ne pouvez pas changer le statut de la demande après l\'acceptation ou le refus.');
+  }
+
+  const updatedDemande = await this.prismaService.demandExpertise.update({
+    where: { idde: demandeId },
+    data: { status },
+  });
+
+  // Envoyer une notification à l'utilisateur
+  const notificationContent = {
+    pubId: demande.pubId,
+    userId: demande.userId,
+    expertId: demande.expertId,
+    status: status,
+  };
+
+  if (status === ExpertiseStatus.ACCEPTE) {
+    await this.notificationService.createNotificationToUser({ userId: demande.userId, status: 'acceptée' }, null);
+  } else if (status === ExpertiseStatus.REJETE) {
+    await this.notificationService.createNotificationToUser({ userId: demande.userId, status: 'refusée' }, null);
+  }
+
+  return updatedDemande;
+}
+
+async createRapport(expertiseId: number, rapportData: CreateRapportDto, expertId: number): Promise<Rapport> {
+  // Vérifier si l'expertise existe et si elle a été acceptée
+  const expertise = await this.prismaService.demandExpertise.findUnique({
+    where: { idde: expertiseId, status: 'ACCEPTE' },
+    include: { expert: true, publication: true },
+  });
+
+  if (!expertise || expertise.expert.ide !== expertId) {
+    throw new Error('Vous n\'êtes pas autorisé à créer un rapport pour cette expertise.');
+  }
+
+  // Créer le rapport pour l'expertise acceptée
+  const newRapport = await this.prismaService.rapport.create({
+    data: {
+      expertiseId: expertiseId,
+      ...rapportData,
+      expert: expertise.expert.firstName + ' ' + expertise.expert.lastName,
+      email_expert: expertise.expert.email,
+      tele_expert: expertise.expert.tel,
+    },
+  });
+
+  return newRapport;
+}
 
 
 

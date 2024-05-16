@@ -38,8 +38,20 @@ export class NotificationGateway {
   @SubscribeMessage('sendNotificationToAdmin')
   sendNotificationToAdmin(content: any, client: Socket) {
     this.server.emit('notificationToAdmin', (res) => {
-      console.log('notification send with success', content )
+      console.log('notification send with success', content)
     });
-
+  }
+  
+  @SubscribeMessage('sendNotificationToExpert')
+  sendNotificationToExpert(content: any, client: Socket) {
+    this.server.emit('notificationToExpert', (res) => {
+      console.log('notification send with success', content);
+    });
+  }
+  @SubscribeMessage('sendNotificationToUser')
+  sendNotificationToUser(content: any, client : Socket){
+    this.server.emit('notificationToUser',(res) =>{
+      console.log('notification send with success' ,content)
+    })
   }
 }

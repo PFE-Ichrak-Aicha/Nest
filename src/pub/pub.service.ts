@@ -1,13 +1,14 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Res } from '@nestjs/common';
-import { City, Publication, TypeCarburant } from '@prisma/client';
+import { City, Publication, TypeCarburant, User } from '@prisma/client';
 import { CreatePubDto } from 'dto/createPubDto';
 import { UpdatePubDto } from 'dto/updatePubDto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { PubFilterDto } from 'dto/pubFilterDto';
-
+//import { DemandExpertiseCreateInput } from 'path/to/your/prisma/generated/types'; // Update the path accordingly
 import { Response } from 'express'
 import { contains } from 'class-validator';
+import { NotificationService } from 'src/notification/notification.service';
 const between = (start: number, end: number) => ({
   gte: start,
   lte: end,
@@ -21,7 +22,7 @@ interface Equippement {
 }
 @Injectable()
 export class PubService {
-  constructor(private readonly prismaService: PrismaService,) { }
+  constructor(private readonly prismaService: PrismaService, private readonly notificationService: NotificationService) { }
 
 
   async getAll() {
@@ -52,31 +53,31 @@ export class PubService {
       }
     })
   }
-   /*async getEquipmentsForPublicationById(publicationId: number) {
-     // Récupérer la publication spécifique avec ses équipements
-     const publication = await this.prismaService.publication.findUnique({
-       where: {
-         pubid: publicationId,
-       },
-       include: {
-         equippements: true, // Inclure les équipements liés à la publication spécifique
-       },
-     });
-   
-     if (!publication) {
-       throw new NotFoundException(`Publication with ID ${publicationId} not found.`);
-     }
-   
-     // Afficher les équipements de la publication spécifique
-     console.log(`Equipements de la publication ${publication.pubid}:`);
-     publication.equippements.forEach((equippement) => {
-       console.log(`- ${equippement.name}`);
-     });
-   
-     return publication.equippements;
-   }*/
+  /*async getEquipmentsForPublicationById(publicationId: number) {
+    // Récupérer la publication spécifique avec ses équipements
+    const publication = await this.prismaService.publication.findUnique({
+      where: {
+        pubid: publicationId,
+      },
+      include: {
+        equippements: true, // Inclure les équipements liés à la publication spécifique
+      },
+    });
+  
+    if (!publication) {
+      throw new NotFoundException(`Publication with ID ${publicationId} not found.`);
+    }
+  
+    // Afficher les équipements de la publication spécifique
+    console.log(`Equipements de la publication ${publication.pubid}:`);
+    publication.equippements.forEach((equippement) => {
+      console.log(`- ${equippement.name}`);
+    });
+  
+    return publication.equippements;
+  }*/
 
-async getPubById(pubId: number) {
+  async getPubById(pubId: number) {
     const publication = await this.prismaService.publication.findUnique({
       where: { pubid: pubId },
 
@@ -88,7 +89,7 @@ async getPubById(pubId: number) {
 
 
 
- async getPublicationWithEquipments(pubId: number) {
+  async getPublicationWithEquipments(pubId: number) {
     const publication = await this.prismaService.publication.findUnique({
       where: { pubid: pubId },
       include: {
@@ -282,29 +283,34 @@ async getPubById(pubId: number) {
   ): Promise<Publication[]> {
     const publications = await this.prismaService.publication.findMany({
       where: {
-        
+
         OR: [
-            { marque: { contains: marque } },
-            { model: { contains:model } },
-            { couleur: { contains: couleur } },
-            { anneeFabrication: { gte: anneeMin, lte: anneeMax } },
-            { nombrePlace: { gte: nombrePlace } },
-            { prix: { gte: prixMin, lte: prixMax } },
-            { typeCarburant: { equals: typeCarburant } },
-            { kilometrage: { gte: kilometrageMin, lte: kilometrageMax } },
-          ],
-        
+          { marque: { contains: marque } },
+          { model: { contains: model } },
+          { couleur: { contains: couleur } },
+          { anneeFabrication: { gte: anneeMin, lte: anneeMax } },
+          { nombrePlace: { gte: nombrePlace } },
+          { prix: { gte: prixMin, lte: prixMax } },
+          { typeCarburant: { equals: typeCarburant } },
+          { kilometrage: { gte: kilometrageMin, lte: kilometrageMax } },
+        ],
+
       },
     });
-  
+
     return publications;
   }
- 
-  
 
-  async getAllMarques(): Promise<string[]>  {
-    const publications = await this.prismaService.publication.findMany();
-    return Array.from(new Set(publications.map(pub => pub.marque)));
+
+
+  async getAllMarques(): Promise<string[]> {
+    const marques = await this.prismaService.publication.findMany({
+      distinct: ['marque'],
+      select: {
+        marque: true,
+      },
+    });
+    return marques.map((pub) => pub.marque);
   }
 
 
@@ -636,35 +642,47 @@ async getPubById(pubId: number) {
       where: { ids: id },
     });
   }
-/*async chercher (key: string){
-  const keyword = key 
-  ?{
-    OR: [
-      {marque : { contains : key}},
-      {model : { contains : key}},
-      {nombrePlace  : { contains : key}},
-      {couleur  : { contains : key}},
-      {transmission : { contains : key}},
+  async demanderExpertise(pubId: number, userId: number, expertId: number) {
+    try {
+      const existingDemande = await this.prismaService.demandExpertise.findUnique({
+        where: {
+          expertId_userId_pubId: {
+            expertId: expertId,
+            userId: userId,
+            pubId: pubId,
+          },
+        },
+      });
+  
+      if (existingDemande) {
+        throw new Error('Une demande d\'expertise existe déjà pour cette combinaison expert, user et publication.');
+      }
+  
+      // Créer une nouvelle demande d'expertise
+      const newDemande = await this.prismaService.demandExpertise.create({
+        data: {
+          userId: userId,
+          pubId: pubId,
+          expertId: expertId,
+          status: 'EN_ATTENTE',
 
-      {carrassorie : { contains : key}},
-       // marque : { contains : key},
-      
-    ],
+        }
+      });
+      // Envoyer une notification à l'expert
+      const expert = await this.prismaService.expert.findUnique({ where: { ide: expertId } });
+      const notificationContent = {
+        pubId: pubId,
+        userId: newDemande.userId, // Ajoutez userId à notificationContent
+        expertId: expertId,
+      };
+      if (expert) {
+        await this.notificationService.createNotificationToExpert(notificationContent, null);
+      }
+      return newDemande;
+    } catch (error) {
+      throw new Error(error);
+    }
   }
-  : {};
-  return this.prismaService.publication.findMany({
-    where: keyword,
-    select: {
-      marque : true,
-      model : true,
-      nombrePlace : true,
-      couleur : true,
-      transmission : true,
-      carrassorie : true,
-    },
-  });
-}*/
-
 
 
 }

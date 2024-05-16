@@ -14,39 +14,39 @@ export class PubFilterDto {
 
   @IsOptional()
 
-  anneeMin?: string;
+  anneeMin?: number;
 
 
   @IsOptional()
 
-  anneeMax?: string;
+  anneeMax?: number;
 
   //@IsNumber()
   @IsOptional()
   //@Transform(({ value }) => parseInt(value))
-  nombrePlace?: string;
+  nombrePlace?: number;
 
 
 
 
   @IsOptional()
 
-  kilometrageMin?:string;
+  kilometrageMin?:number;
 
 
   @IsOptional()
 
-  kilometrageMax?: string;
+  kilometrageMax?: number;
 
 
   @IsOptional()
 
-  prixMin?: string;
+  prixMin?: number;
 
 
   @IsOptional()
   
-  prixMax?: string;
+  prixMax?: number;
 
   @IsEnum(TypeCarburant)
   @IsOptional()

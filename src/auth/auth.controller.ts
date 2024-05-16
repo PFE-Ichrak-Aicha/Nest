@@ -24,8 +24,8 @@ export class AuthController {
   }
   
   @Post("connexion")
-  connexion(@Body() connexionDto: connexionDto) {
-    return this.authService.connexion(connexionDto)
+  connexion(@Body() connexionDto: connexionDto, @Req() req: Request) {
+    return this.authService.connexion(connexionDto, req)
   }
 
   @Post("connexionAdmin")

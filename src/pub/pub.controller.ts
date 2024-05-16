@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, InternalServerErrorException, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, InternalServerErrorException, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors, ValidationPipe } from '@nestjs/common';
 import { PubService } from './pub.service';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from 'src/user/user.service';
@@ -6,15 +6,17 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePubDto } from 'dto/createPubDto';
 import { Request } from 'express';
 import { UpdatePubDto } from 'dto/updatePubDto';
-import { MediaService } from 'src/media/media.service';
-import { BoiteVitesse, City, Publication, Sellerie, TypeCarburant } from '@prisma/client';
+import { BoiteVitesse, City, Publication, Sellerie, TypeCarburant, User } from '@prisma/client';
 import * as multer from 'multer';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PubFilterDto } from 'dto/pubFilterDto';
 import { Response } from 'express';
 import { UserGuard } from 'src/user/user.guard';
 import { AdminService } from 'src/admin/admin.service';
-
+import { ExpertService } from 'src/expert/expert.service';
+import { CurrentUser } from 'current-user.decorator'
+//import { CurrentUser } from '@nestjs/jwt';
+//import { CurrentUser } from '@nestjs/passport';
 export const publicationStorage = {
   imageStorage: multer.diskStorage({
     destination: './uploads/images',
@@ -58,28 +60,12 @@ function checkFileType(file, cb) {
 @Controller('pubs')
 export class PubController {
   publicationService: any;
-  constructor(private readonly pubService: PubService, private readonly mediaService: MediaService, private readonly userService: UserService, private readonly prismaService: PrismaService, private readonly adminService : AdminService) { }
+  constructor(private readonly pubService: PubService, private readonly userService: UserService, private readonly prismaService: PrismaService, private readonly adminService: AdminService, private readonly expertService: ExpertService) { }
 
   @Get()
   getAll() {
     return this.pubService.getAll()
   }
-
-  @Get(':pubid')
-  async getPublications(@Param('pubid', ParseIntPipe) pubId: number) {
-    const publication = await this.pubService.getPublicationWithEquipments(pubId);
-    return publication;
-  }
-
-
-  //bch taffichi IMAGESPAR ID de pub
-  @Get(':id/images')
-  async getPublicationImages(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
-    let result = this.pubService.getPublicationImages(id, res);
-
-    return result;
-  }
-
 
   //FILTRER
   @Get('filtrer')
@@ -113,15 +99,16 @@ export class PubController {
     const nombrePlaceNumber = parseInt(nombrePlace);
     const prixMinNumber = parseInt(prixMin);
     const prixMaxNumber = parseInt(prixMax);
-    
-    return await this.adminService.searchPublications(query, marque, model, couleur, anneeMinNumber, anneeMaxNumber, nombrePlaceNumber, prixMinNumber, prixMaxNumber , city, boiteVitesse, typeCarburant, sellerie, equippement);
-    
+
+    return await this.adminService.searchPublications(query, marque, model, couleur, anneeMinNumber, anneeMaxNumber, nombrePlaceNumber, prixMinNumber, prixMaxNumber, city, boiteVitesse, typeCarburant, sellerie, equippement);
+
   }
   //yraja3lk marques li 3ana fi lbase
   @Get('marques')
-  async getAllMarques() : Promise<string[]>{
+  async getAllMarques(): Promise<string[]> {
     return this.pubService.getAllMarques();
   }
+
 
   //yraja3lk models li 3ana fi lbase  
   @Get('models')
@@ -178,11 +165,11 @@ export class PubController {
     return await this.pubService.getEquipments();
   }
 
-  @Get (':id/equipments')
-async getPublication(@Param('id',ParseIntPipe)pubId: number){
-  const publication = await this.pubService.getPublicationWithEquipments(pubId);
-  return publication;
-}
+  @Get(':id/equipments')
+  async getPublication(@Param('id', ParseIntPipe) pubId: number) {
+    const publication = await this.pubService.getPublicationWithEquipments(pubId);
+    return publication;
+  }
   @Get('equipment/:id')
   async getEquipmentById(@Param('id') id: string) {
     try {
@@ -207,11 +194,11 @@ async getPublication(@Param('id',ParseIntPipe)pubId: number){
     }
   }
   //Get PUB PAR ID
- /* @Get(':pubid')
-  //@UseGuards(AuthGuard('jwt'))
-  async getPublicationById(@Param('pubid', ParseIntPipe) pubId: number) {
-    return this.pubService.getPubById(pubId);
-  }*/
+  /* @Get(':pubid')
+   //@UseGuards(AuthGuard('jwt'))
+   async getPublicationById(@Param('pubid', ParseIntPipe) pubId: number) {
+     return this.pubService.getPubById(pubId);
+   }*/
 
   //bch ta3mel creation d'une pub
   @UseGuards(UserGuard)
@@ -350,13 +337,33 @@ async getPublication(@Param('id',ParseIntPipe)pubId: number){
     return this.pubService.getSubscriptionById(id);
   }
 
-  /*@Get('chercher')
-  chercher(@Query('key')key: string){
-    if(key){
-      return this.pubService.chercher(key);
-    }
-    throw new BadRequestException('Missing key query parameter')
-  }*/
+  @UseGuards(UserGuard)
+  @Post(':pubId/expertise')
+  async demanderExpertise(@Param('pubId') pubId: number, @Body('expertId') expertId: number,
+    @Req() request: any,) {
+    const payload = request.user;
+    const userId = payload.sub;
+    return this.pubService.demanderExpertise(pubId, userId, expertId);
+  }
+
+
+
+  @Get(':pubid')
+  async getPublications(@Param('pubid', ParseIntPipe) pubId: number) {
+    const publication = await this.pubService.getPublicationWithEquipments(pubId);
+    return publication;
+  }
+
+
+  //bch taffichi IMAGESPAR ID de pub
+  @Get(':id/images')
+  async getPublicationImages(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    let result = this.pubService.getPublicationImages(id, res);
+
+    return result;
+  }
+
+
 
 }
 

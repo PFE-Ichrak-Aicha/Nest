@@ -188,10 +188,11 @@ model DemandExpertise {
   user        User            @relation(fields: [userId], references: [id])
   pubId       Int
   publication Publication     @relation(fields: [pubId], references: [pubid])
-  expertId    Int             @unique
+  expertId    Int             
   expert      Expert          @relation(fields: [expertId], references: [ide])
   rapport     Rapport?
   rapportId   Int?            @unique
+  @@unique([ expertId,userId, pubId])
 }
 
 model Rapport {

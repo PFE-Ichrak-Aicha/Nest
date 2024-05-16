@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req, UseGuards, Request, NotFoundException, ParseIntPipe, Res } from '@nestjs/common';
+import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req, UseGuards, Request, NotFoundException, ParseIntPipe, Res, ForbiddenException } from '@nestjs/common';
 import * as multer from 'multer';
 import { ExpertService } from './expert.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -9,6 +9,9 @@ import { ExpertGuard } from './expert.guard';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { Observable, from, of } from 'rxjs';
 import path, { join } from 'path';
+import { DemandExpertise, ExpertiseStatus } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateRapportDto } from 'dto/createRapportDto';
 const certifStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/certif');
@@ -32,7 +35,7 @@ export const storage = {
 }
 @Controller('expert')
 export class ExpertController {
-  constructor(private readonly expertService: ExpertService, private readonly mailerService: MailerService) { }
+  constructor(private readonly expertService: ExpertService, private readonly mailerService: MailerService, private readonly prismaService : PrismaService) { }
 
   @Post('demandExp')
   @UseInterceptors(FileInterceptor('cv', { dest: 'uploads/certif' }))
@@ -114,7 +117,54 @@ updateProfileImage(@UploadedFile() file, @Req() request: any): Observable<Object
     const adminId = payload.sub;
     return from(this.expertService.updateProfileImage(adminId, file.filename));
 }
+@UseGuards(ExpertGuard)
+@Post(':idee/confirmer')
+async accepterDemande(
+  @Param('idee', ParseIntPipe) demandeId: number,
+  @Req() request: any,
+): Promise<DemandExpertise> {
+  const payload = request.user;
+  const expertId = payload.sub;
+   // Vérifier si l'expert est bien lié à la demande d'expertise
+   const demande = await this.prismaService.demandExpertise.findUnique({
+    where: { idde: demandeId },
+    include: { expert: true },
+  });
 
+  if (!demande || demande.expert.ide !== expertId) {
+    throw new ForbiddenException('Vous n\'êtes pas autorisé à mettre à jour cette demande d\'expertise.');
+  }
+  return this.expertService.updateDemandeStatus(demandeId, ExpertiseStatus.ACCEPTE, expertId);
+}
+
+@UseGuards(ExpertGuard)
+@Post(':idee/refuser')
+async refuserDemande(
+  @Param('idee', ParseIntPipe) demandeId: number,
+  @Req() request: any,
+): Promise<DemandExpertise> {
+  const payload = request.user;
+  const expertId = payload.sub;
+   // Vérifier si l'expert est bien lié à la demande d'expertise
+   const demande = await this.prismaService.demandExpertise.findUnique({
+    where: { idde: demandeId },
+    include: { expert: true },
+  });
+
+  if (!demande || demande.expert.ide !== expertId) {
+    throw new ForbiddenException('Vous n\'êtes pas autorisé à mettre à jour cette demande d\'expertise.');
+  }
+  return this.expertService.updateDemandeStatus(demandeId, ExpertiseStatus.REJETE, expertId);
+}
+
+@UseGuards(ExpertGuard)
+@Post(':expertiseId/rapport')
+async createRapport(@Param('expertiseId', ParseIntPipe) expertiseId: number, @Body() rapportData: CreateRapportDto, @Req() request: any) {
+  const payload = request.user;
+  const expertId = payload.sub;
+
+  return this.expertService.createRapport(expertiseId, rapportData, expertId);
+}
 
  
 

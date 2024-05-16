@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
 //import { DeleteAccountDto } from 'dto/deleteAccountDto';
-import { Request, Response} from 'express';
+import { Request} from 'express';
 
 @Injectable()
 export class AuthService {
@@ -60,7 +60,7 @@ export class AuthService {
             //return { data: 'Utilisateur enregistré ' };
             return { message: "Utilisateur enregistré et connecté", user: newUser, token };
         }
-    async connexion(connexionDto: connexionDto) {
+    async connexion(connexionDto: connexionDto,req: Request) {
         const { email, MotDePasse } = connexionDto;
         // Recherche de l'utilisateur dans la base de données
         const user = await this.prismaService.user.findUnique({ where: { email } });
@@ -80,6 +80,7 @@ export class AuthService {
         };
         const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
         // Retour de la réponse avec le token JWT et les informations de l'utilisateur
+        req.user = { id: user.id, email: user.email };
         return {
             token,
             user: {
