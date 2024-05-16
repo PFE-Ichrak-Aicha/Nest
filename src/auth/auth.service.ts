@@ -171,10 +171,10 @@ export class AuthService {
   1
 
       async validatePasswordResetCode(code: string ,req :Request): Promise<{ data: string } | { error: string }> {
-         const  email  = this.getEmailFromResetUrl(req);
+        // const  email  = this.getEmailFromResetUrl(req);
         /* Récupérer l'email à partir de la demande de réinitialisation */
-        const user = await this.prismaService.user.findUnique({ where: { email } });
-        if (!user) throw new NotFoundException('User not found');
+      //  const user = await this.prismaService.user.findUnique({ where: { email } });
+        //if (!user) throw new NotFoundException('User not found');
 
         const isValid = speakeasy.totp.verify({
             secret: this.configService.get('OTP_CODE'),
@@ -197,11 +197,11 @@ export class AuthService {
         });
       }
       
-    getEmailFromResetUrl(req: Request): string {
+    /*getEmailFromResetUrl(req: Request): string {
         const email = req.query.email as string; // Récupérer l'email à partir de req.query.email
         if (!email) throw new Error('Email not found in reset URL');
         return email;
-    }
+    }*/
 
     async resetPassDemandExpert(email: string): Promise<void> {
         const expert = await this.prismaService.expert.findUnique({ where: { email } });
@@ -222,10 +222,10 @@ export class AuthService {
   
   
       async validatePasswordResetCodeExpert(code: string ,req :Request): Promise<{ data: string } | { error: string }> {
-         const  email  = this.getEmailFromResetUrl(req);
+         //const  email  = this.getEmailFromResetUrl(req);
         /* Récupérer l'email à partir de la demande de réinitialisation */
-        const expert = await this.prismaService.expert.findUnique({ where: { email } });
-        if (!expert) throw new NotFoundException('User not found');
+       // const expert = await this.prismaService.expert.findUnique({ where: { email } });
+       // if (!expert) throw new NotFoundException('User not found');
 
         const isValid = speakeasy.totp.verify({
             secret: this.configService.get('OTP_CODE'),

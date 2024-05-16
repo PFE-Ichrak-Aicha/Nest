@@ -302,15 +302,9 @@ async getPubById(pubId: number) {
  
   
 
-  async getAllMarques(): Promise<string[]> {
-    const marques = await this.prismaService.publication.findMany({
-      select: {
-        marque: true,
-      },
-      distinct: ['marque'],
-    });
-    console.log(marques);
-    return marques.map((pub) => pub.marque.toString());
+  async getAllMarques(): Promise<string[]>  {
+    const publications = await this.prismaService.publication.findMany();
+    return Array.from(new Set(publications.map(pub => pub.marque)));
   }
 
 

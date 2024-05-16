@@ -57,7 +57,7 @@ async validateResetCode(@Body() validatePassCodeDto: ValidatePassCodeDto, @Res()
     if ('error' in result) {
         return res.status(401).json({ message: result.error });
     } else {
-        const email = this.authService.getEmailFromResetUrl(req);
+       // const email = this.authService.getEmailFromResetUrl(req);
         // Continuer avec le reste du code en utilisant l'email récupéré et le code validé
         return res.status(200).json({ message: 'Reset code validated successfully' });
     }
@@ -97,7 +97,7 @@ try {
   if ('error' in result) {
       return res.status(401).json({ message: result.error });
   } else {
-      const email = this.authService.getEmailFromResetUrl(req);
+      //const email = this.authService.getEmailFromResetUrl(req);
       // Continuer avec le reste du code en utilisant l'email récupéré et le code validé
       return res.status(200).json({ message: 'Reset code validated successfully' });
   }

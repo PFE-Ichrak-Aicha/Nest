@@ -56,7 +56,7 @@ model Publication {
   nombrePlace             Int                      @db.Int()
   couleur                 String                   @db.VarChar(30)
   kilometrage             Int                      @db.Int()
-  prix                    Float
+  prix                    Float                     @db.Float()
   descrption              String?                  @db.VarChar(400)
   typeCarburant           TypeCarburant
   userId                  Int // Foreign key referencing User
@@ -169,7 +169,7 @@ model Expert {
   tel         String
   description String  @db.Text
   cout        String
-  PhotoProfil    String?
+  PhotoProfil String?
   isExpert    Boolean @default(true)
 
   createdAt DateTime @default(now())

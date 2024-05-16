@@ -66,7 +66,7 @@ export class PubController {
   }
 
   @Get(':pubid')
-  async getPublication(@Param('pubid', ParseIntPipe) pubId: number) {
+  async getPublications(@Param('pubid', ParseIntPipe) pubId: number) {
     const publication = await this.pubService.getPublicationWithEquipments(pubId);
     return publication;
   }
@@ -119,8 +119,8 @@ export class PubController {
   }
   //yraja3lk marques li 3ana fi lbase
   @Get('marques')
-  async getAllMarques(): Promise<string[]> {
-    return this.publicationService.getAllMarques();
+  async getAllMarques() : Promise<string[]>{
+    return this.pubService.getAllMarques();
   }
 
   //yraja3lk models li 3ana fi lbase  
@@ -158,7 +158,7 @@ export class PubController {
   async getAllSellerie(): Promise<string[]> {
     return this.pubService.getAllSellerie();
   }
-  @Get('equipmentss')
+  @Get('equipments')
   async getAllEquipments() {
     try {
       const equipments = await this.prismaService.equippement.findMany({
@@ -173,11 +173,16 @@ export class PubController {
       return { error: 'Error retrieving equipments' };
     }
   }
-  @Get('equipments')
+  @Get('equipmentuser')
   async getEquipments(): Promise<any> {
     return await this.pubService.getEquipments();
   }
 
+  @Get (':id/equipments')
+async getPublication(@Param('id',ParseIntPipe)pubId: number){
+  const publication = await this.pubService.getPublicationWithEquipments(pubId);
+  return publication;
+}
   @Get('equipment/:id')
   async getEquipmentById(@Param('id') id: string) {
     try {
