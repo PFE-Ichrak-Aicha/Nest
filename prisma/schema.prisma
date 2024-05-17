@@ -28,7 +28,7 @@ model User {
   //MotDePasseConfirmation String        @db.VarChar(80)
   resetCode    String?
   publications Publication[] @relation("user_publications")
-
+  rapports      Rapport[]    @relation("UserRapports")
   favorites     PublicationFavorite[]
   expertises    DemandExpertise[]
   notifications Notification[]
@@ -174,7 +174,7 @@ model Expert {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ rapports      Rapport[]    @relation("ExpertRapports")
   expertise     DemandExpertise[]
   notifications Notification[]
 }
@@ -202,7 +202,7 @@ model Rapport {
   date_expertise    String
   adresse_expertise String
   lieu_expertise    String
-  expert            String
+  expert_nom           String
   email_expert      String
   tele_expert       String
   nom_client        String
@@ -223,6 +223,11 @@ model Rapport {
   nb_place          Int
   nb_porte          Int
   commentaire_exp   String          @db.Text
+ userId      Int
+  user        User        @relation(fields: [userId], references: [id], name: "UserRapports")
+  expertId    Int
+  expert      Expert      @relation(fields: [expertId], references: [ide], name: "ExpertRapports")
+  //userId 
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 }

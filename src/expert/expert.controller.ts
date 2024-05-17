@@ -9,7 +9,7 @@ import { ExpertGuard } from './expert.guard';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { Observable, from, of } from 'rxjs';
 import path, { join } from 'path';
-import { DemandExpertise, ExpertiseStatus } from '@prisma/client';
+import { DemandExpertise, ExpertiseStatus, Rapport } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRapportDto } from 'dto/createRapportDto';
 const certifStorage = multer.diskStorage({
@@ -166,10 +166,38 @@ async createRapport(@Param('expertiseId', ParseIntPipe) expertiseId: number, @Bo
   return this.expertService.createRapport(expertiseId, rapportData, expertId);
 }
 
- 
+/*@UseGuards(ExpertGuard)
+@Get('expertises/:expertiseId/rapport')
+async getRapportParExpertise(
+  @Param('expertiseId', ParseIntPipe) expertiseId: number,
+  @Req() request: any
+): Promise<Rapport> {
+  const payload = request.user;
+  const expertId = payload.sub;
+  return this.expertService.getRapportParExpertise(expertiseId, expertId);
+}*/
 
+/*@UseGuards(ExpertGuard)
+@Get('expertise/:expertiseId/rapport')
+  async getRapport(@Param('expertiseId', ParseIntPipe) expertiseId: number,@Req() request: any): Promise<Rapport> {
+    const payload = request.user;
+    const expertId = payload.sub;
+    return this.expertService.getRapportByExpertiseId(expertiseId);
+  }*/
+  @UseGuards(ExpertGuard)
+  @Get('expertise/:expertiseId/rapport')
+  async getRapport(@Param('expertiseId', ParseIntPipe) expertiseId: number, @Req() request: any) {
+    const payload = request.user;
+    const expertId = payload.sub;
 
-
+    const rapport = await this.expertService.getRapportByExpertiseId(expertiseId, expertId);
+    
+    if (!rapport) {
+      throw new ForbiddenException('Access denied');
+    }
+    
+    return rapport;
+  }
 }
 function getExtension(mimetype: string): string {
   switch (mimetype) {

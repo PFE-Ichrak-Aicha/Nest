@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as multer from 'multer';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Socket } from 'socket.io'
@@ -200,7 +200,7 @@ async createRapport(expertiseId: number, rapportData: CreateRapportDto, expertId
   // Vérifier si l'expertise existe et si elle a été acceptée
   const expertise = await this.prismaService.demandExpertise.findUnique({
     where: { idde: expertiseId, status: 'ACCEPTE' },
-    include: { expert: true, publication: true },
+    include: { expert: true, publication: true, user: true },
   });
 
   if (!expertise || expertise.expert.ide !== expertId) {
@@ -211,22 +211,108 @@ async createRapport(expertiseId: number, rapportData: CreateRapportDto, expertId
   const newRapport = await this.prismaService.rapport.create({
     data: {
       expertiseId: expertiseId,
-      ...rapportData,
-      expert: expertise.expert.firstName + ' ' + expertise.expert.lastName,
-      email_expert: expertise.expert.email,
-      tele_expert: expertise.expert.tel,
+        userId: expertise.userId,
+        expertId: expertId,
+        date_expertise: rapportData.date_expertise,
+        adresse_expertise: rapportData.adresse_expertise,
+        lieu_expertise: rapportData.lieu_expertise,
+        expert_nom: expertise.expert.firstName + ' ' + expertise.expert.lastName,
+        email_expert: expertise.expert.email,
+        tele_expert: expertise.expert.tel,
+        nom_client: rapportData.nom_client,
+        adresse_client: rapportData.adresse_client,
+        tel_client: rapportData.tel_client,
+        email_client: rapportData.email_client,
+        marque_v: rapportData.marque_v,
+        modele_v: rapportData.modele_v,
+        motirisation_v: rapportData.motirisation_v,
+        couleur_v: rapportData.couleur_v,
+        transmission_v: rapportData.transmission_v,
+        km_v: rapportData.km_v,
+        his_prio: rapportData.his_prio,
+        immatriculation_v: rapportData.immatriculation_v,
+        carrosserie: rapportData.carrosserie,
+        type_carburent: rapportData.type_carburent,
+        puissance: rapportData.puissance,
+        nb_place: rapportData.nb_place,
+        nb_porte: rapportData.nb_porte,
+        commentaire_exp: rapportData.commentaire_exp,
     },
   });
 
   return newRapport;
 }
 
+async getRapportByExpertiseId(expertiseId: number, expertId: number) {
+  try {
+    const rapport = await this.prismaService.rapport.findUnique({
+      where: { expertiseId },
+      include: {
+        expertise: {
+          include: {
+            user: true,
+           // publication: true,
+            expert: true
+          }
+        }
+      }
+    });
+    if (!rapport) {
+      throw new Error('Rapport not found');
+    }
+    
+    // Vérifiez si l'expertId correspond à l'expert de l'expertise
+    if (rapport.expertise.expertId !== expertId) {
+      throw new ForbiddenException('You do not have access to this report');
+    }
+    
+    return rapport;
+  } catch (error) {
+    throw new Error(`Failed to retrieve rapport: ${error.message}`);
+  }
+}
+/*async getRapportParExpertise(expertiseId: number, expertId: number): Promise<Rapport> {
+  // Récupérer le rapport en utilisant l'ID de l'expertise et l'ID de l'expert
+  const rapport = await this.prismaService.rapport.findUnique({
+    where: {
+      expertiseId: expertiseId,
+    },
+    include: {
+      expertise: {
+        where: {
+          expertId: expertId,
+        },
+      },
+    },
+  });
 
+  if (!rapport || !rapport.expertiseId) {
+    throw new NotFoundException('Rapport non trouvé.');
+  }
 
+  return rapport;
+}*/
 
-
-
-
+/*async getRapportByExpertiseId(expertiseId: number) {
+  try {
+    const rapport = await this.prismaService.rapport.findUnique({
+      where: { expertiseId },
+      include: {
+        expertise: {
+          include: {
+            expert: true
+          }
+        }
+      }
+    });
+    if (!rapport) {
+      throw new Error('Rapport not found');
+    }
+    return rapport;
+  } catch (error) {
+    throw new Error(`Failed to retrieve rapport: ${error.message}`);
+  }
+}*/
   /*async updateExpertRequest(id: number, requestData: FormExpertDto, cv: string) {
     try {
       await this.prismaService.expertRequest.update({
