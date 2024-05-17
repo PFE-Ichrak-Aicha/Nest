@@ -229,7 +229,7 @@ export class AdminController {
   async getAllExperts(): Promise<Expert[]> {
     return this.adminService.getAllExperts();
   }
-  @UseGuards(AdminGuard)
+  //@UseGuards(AdminGuard)
   @Get('experts/:id')
   async getExpertById(@Param('id') id: number): Promise<Expert> {
     return this.adminService.getExpertById(id);
