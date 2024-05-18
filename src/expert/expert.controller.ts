@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req, UseGuards, Request, NotFoundException, ParseIntPipe, Res, ForbiddenException } from '@nestjs/common';
+import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req, UseGuards, Request, NotFoundException, ParseIntPipe, Res, ForbiddenException, Patch } from '@nestjs/common';
 import * as multer from 'multer';
 import { ExpertService } from './expert.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -12,6 +12,7 @@ import path, { join } from 'path';
 import { DemandExpertise, ExpertiseStatus, Rapport } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRapportDto } from 'dto/createRapportDto';
+import { Notification } from '@prisma/client';
 const certifStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/certif');
@@ -37,6 +38,7 @@ export const storage = {
 export class ExpertController {
   constructor(private readonly expertService: ExpertService, private readonly mailerService: MailerService, private readonly prismaService: PrismaService) { }
 
+  //demande d'etre un expert
   @Post('demandExp')
   @UseInterceptors(FileInterceptor('cv', { dest: 'uploads/certif' }))
   async createExpertRequest(
@@ -48,24 +50,7 @@ export class ExpertController {
     return this.expertService.createExpertRequest(requestData, cv.originalname, client);
   }
 
-  /*@Get('demand/:id')
-  async getExpertRequest(@Param('id') id: number) {
-    return this.expertService.getExpertRequest(id);
-  }
-  @Put('demand/:id')
-  @UseInterceptors(FileInterceptor('cv', { dest: 'uploads/certif' }))
-  async updateExpertRequest(
-    @Param('id') id: number,
-    @UploadedFile() cv: Express.Multer.File,
-    @Body() requestData: FormExpertDto,
-  ) {
-    return this.expertService.updateExpertRequest(id, requestData, cv.filename);
-  }
 
-  @Delete('demand/:id')
-  async deleteExpertRequest(@Param('id') id: number) {
-    return this.expertService.deleteExpertRequest(id);
-  }*/
   @UseGuards(ExpertGuard)
   @Put("update-account")
   update(@Req() request: any,
@@ -74,9 +59,10 @@ export class ExpertController {
     const payload = request.user;
     console.log("PAYYYYYY", payload)
     const expertId = payload.sub;
-
     return this.expertService.updateAccount(expertId, updateAccountDto)
   }
+
+
   @UseGuards(ExpertGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', storage))
@@ -91,6 +77,57 @@ export class ExpertController {
     return of({ imagePath: file.filename });
   }
 
+
+  @UseGuards(ExpertGuard)
+  @Get('expertises/accepted')
+  async getAcceptedExpertises(@Req() request: any) {
+    const payload = request.user;
+    const expertId = payload.sub;
+  
+    try {
+      return this.expertService.getAcceptedExpertises(expertId);
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+
+  @UseGuards(ExpertGuard)
+  @Get('expertises/rejected')
+  async getRejectedExpertises(@Req() request: any) {
+    const payload = request.user;
+    const expertId = payload.sub;
+  
+    try {
+      return this.expertService.getRejectedExpertises(expertId);
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+  
+  @UseGuards(ExpertGuard)
+  @Get('rapports')
+  async getRapports(@Req() request: any) {
+    const payload = request.user;
+    const expertId = payload.sub;
+    return this.expertService.getRapportsParExpert(expertId);
+  }
+
+
+  @UseGuards(ExpertGuard)
+  @Get('expertises')
+  async getExpertises(@Req() request: any) {
+    const payload = request.user;
+    const expertId = payload.sub;
+    return this.expertService.getExpertisesByExpert(expertId);
+  }
+ @UseGuards(ExpertGuard)
+  @Get('notifications')
+  async getNotifications(@Req() request: any): Promise<Notification[]> {
+    const payload = request.user;
+    const expertId = payload.sub;
+
+    return this.expertService.getNotificationsByExpertId(expertId);
+  }
   @Get('profile-image/:id')
   async findProfileImage(@Param('id', ParseIntPipe) adminId: number, @Res() res): Promise<void> {
     // Récupérez le nom de l'image à partir de la base de données en fonction de l'ID de l'utilisateur
@@ -117,6 +154,8 @@ export class ExpertController {
     const adminId = payload.sub;
     return from(this.expertService.updateProfileImage(adminId, file.filename));
   }
+
+
   @UseGuards(ExpertGuard)
   @Post(':idee/confirmer')
   async accepterDemande(
@@ -130,12 +169,12 @@ export class ExpertController {
       where: { idde: demandeId },
       include: { expert: true },
     });
-
     if (!demande || demande.expert.ide !== expertId) {
       throw new ForbiddenException('Vous n\'êtes pas autorisé à mettre à jour cette demande d\'expertise.');
     }
     return this.expertService.updateDemandeStatus(demandeId, ExpertiseStatus.ACCEPTE, expertId);
   }
+
 
   @UseGuards(ExpertGuard)
   @Post(':idee/refuser')
@@ -150,77 +189,56 @@ export class ExpertController {
       where: { idde: demandeId },
       include: { expert: true },
     });
-
     if (!demande || demande.expert.ide !== expertId) {
       throw new ForbiddenException('Vous n\'êtes pas autorisé à mettre à jour cette demande d\'expertise.');
     }
     return this.expertService.updateDemandeStatus(demandeId, ExpertiseStatus.REJETE, expertId);
   }
 
+
   @UseGuards(ExpertGuard)
   @Post(':expertiseId/rapport')
   async createRapport(@Param('expertiseId', ParseIntPipe) expertiseId: number, @Body() rapportData: CreateRapportDto, @Req() request: any) {
     const payload = request.user;
     const expertId = payload.sub;
-
     return this.expertService.createRapport(expertiseId, rapportData, expertId);
   }
 
-  /*@UseGuards(ExpertGuard)
-  @Get('expertises/:expertiseId/rapport')
-  async getRapportParExpertise(
-    @Param('expertiseId', ParseIntPipe) expertiseId: number,
-    @Req() request: any
-  ): Promise<Rapport> {
-    const payload = request.user;
-    const expertId = payload.sub;
-    return this.expertService.getRapportParExpertise(expertiseId, expertId);
-  }*/
 
-  /*@UseGuards(ExpertGuard)
-  @Get('expertise/:expertiseId/rapport')
-    async getRapport(@Param('expertiseId', ParseIntPipe) expertiseId: number,@Req() request: any): Promise<Rapport> {
-      const payload = request.user;
-      const expertId = payload.sub;
-      return this.expertService.getRapportByExpertiseId(expertiseId);
-    }*/
   @UseGuards(ExpertGuard)
   @Get('expertise/:expertiseId/rapport')
   async getRapport(@Param('expertiseId', ParseIntPipe) expertiseId: number, @Req() request: any) {
     const payload = request.user;
     const expertId = payload.sub;
-
     const rapport = await this.expertService.getRapportByExpertiseId(expertiseId, expertId);
-
     if (!rapport) {
       throw new ForbiddenException('Access denied');
     }
-
     return rapport;
   }
 
-  @UseGuards(ExpertGuard)
-  @Get('rapports')
-  async getRapports(@Req() request: any) {
-    const payload = request.user;
-    const expertId = payload.sub;
 
-    return this.expertService.getRapportsParExpert(expertId);
-  }
+
 
   @UseGuards(ExpertGuard)
-  @Get('expertises')
-  async getExpertises(@Req() request: any) {
+  @Get('expertises/:demandeId')
+  async getExpertise(@Param('demandeId', ParseIntPipe) demandeId: number, @Req() request: any) {
     const payload = request.user;
     const expertId = payload.sub;
+    return this.expertService.getExpertiseByIdAndExpert(demandeId, expertId);
+  }
 
-    return this.expertService.getExpertisesByExpert(expertId);
+ 
+ 
+  @UseGuards(ExpertGuard)
+  @Patch('notifications/:notificationId')
+  async markNotificationAsRead(@Param('notificationId', ParseIntPipe) notificationId: number): Promise<Notification> {
+    const notification = await this.expertService.markNotificationAsRead(notificationId);
+    return notification;
   }
 
 
-
-
-
+  
 
 
 
@@ -236,110 +254,6 @@ function getExtension(mimetype: string): string {
     default:
       return '.bin';
   }
-
-
-
-
-
-  /*@Post()
-@UseInterceptors(FileInterceptor('cv', { dest: 'uploads/certificates' }))
-async createExpert(
-  @UploadedFile() file: Express.Multer.File,
-  createExpertDto: CreateExpertDto,
-): Promise<void> {
-  try {
-    await this.expertService.createExpert(createExpertDto, file);
-    // Send a notification to the admin
-  } catch (error) {
-    // Handle the error
-  }
-}*/
-  /*
-    @Post('accept/:id')
-    async acceptExpertApplication(
-      @Param('id') id: number,
-      @Body() createExpertDto: CreateExpertDto,
-    ): Promise<void> {
-      try {
-        // Generate a random password
-        const password = Math.random().toString(36).slice(-8);
-  
-        // Create the expert
-        const expert = await this.expertService.createExpert(createExpertDto, null, password, id);
-  
-        // Send an acceptance email to the expert
-        const transporter = nodemailer.createTransport({
-          host: 'smtp.example.com',
-          port: 587,
-          secure: false, // true for 465, false for other ports
-          auth: {
-            user: 'admin@example.com',
-            pass: 'password',
-          },
-        });
-  
-        const mailOptions = {
-          from: 'admin@example.com',
-          to: createExpertDto.email,
-          subject: 'Expert Application Accepted',
-          text: `Your expert application has been accepted. Your account credentials are:
-  
-  Email: ${createExpertDto.email}
-  Password: ${password}`,
-        };
-  
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            console.log(error);
-          } else {
-            console.log(`Email sent: ${info.response}`);
-          }
-        });
-      } catch (error) {
-        // Handle the error
-        console.log(error);
-      }
-    }
-  
-    @Post('reject/:id')
-    async rejectExpertApplication(
-      @Param('id') id: number,
-      @Body() createExpertDto: CreateExpertDto,
-    ): Promise<void> {
-      try {
-        // Send a rejection email to the expert
-        const transporter = nodemailer.createTransport({
-  host: 'smtp.example.com',
-          port: 587,
-          secure: false, // true for 465, false for other ports
-          auth: {
-            user: 'admin@example.com',
-            pass: 'password',
-          },
-        });
-  
-        const mailOptions = {
-          from: 'admin@example.com',
-          to: createExpertDto.email,
-          subject: 'Expert Application Rejected',
-          text: 'Your expert application has been rejected.',
-        };
-  
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            console.log(error);
-          } else {
-            console.log(`Email sent: ${info.response}`);
-          }
-        });
-      } catch (error) {
-        // Handle the error
-        console.log(error);
-      }
-    }
-  }*/
-
-
 
 
 

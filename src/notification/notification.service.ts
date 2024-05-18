@@ -43,34 +43,35 @@ export class NotificationService {
   }
   async createNotificationToExpert(content: any, client: Socket) {
     try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: content.userId
+        },
+        select: {
+          Nom: true,
+          Prenom: true
+        }
+      });
+  
       const notification = {
         title: 'Nouvelle demande d\'expertise',
-        body: `Une nouvelle demande d'expertise a été créée pour la publication ${content.pubId}.`,
+        body: `${user.Nom} ${user.Prenom} a envoyé une nouvelle demande d'expertise pour la publication ${content.pubId}.`,
         data: {
           userId: content.userId,
-          //expertId : expertId,
           publicationId: content.pubId,
-          expertId: content.expertId,
-          /*firstName: content.firstName,
-          lastName: content.lastName,
-          email: content.email,
-          telephone: content.telephone,
-          city: content.city,
-          description: content.description,
-          cout: content.cout,
-          cvLink: content.cvLink,*/
-        },
+          expertId: content.expertId
+        }
       };
-
+  
       const newNotification = await this.prisma.notification.create({
         data: {
           content: JSON.stringify(notification),
           isRead: false,
           expertId: content.expertId,
-          userId: content.userId // ID de l'expert
-        },
+          userId: content.userId
+        }
       });
-
+  
       this.notificationGateway.sendNotificationToExpert(notification, client);
       return newNotification;
     } catch (error) {
@@ -79,10 +80,19 @@ export class NotificationService {
   }
   async createNotificationToUser(content: any, client: Socket) {
     try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: content.userId
+        },
+        select: {
+          Nom: true,
+          Prenom: true
+        }
+      });
       const status = content.status === 'acceptée' ? 'acceptée' : 'refusée';
   
       const notification = {
-        title: 'Notification pour l\'utilisateur${userId}',
+        title: 'Notification pour l\'utilisateur${user.Nom} ${user.Prenom} ',
         body: `Votre demande d'expertise a été ${status}.`,
         data: {
          // userId: content.userId,
@@ -109,18 +119,3 @@ export class NotificationService {
 
 
 
-
-/*async getCVFromLink(cvLink: string): Promise<{ path: string }> {
-    try {
-        // Extraire le nom du fichier CV à partir du lien
-        const cvFileName = cvLink.split('/').pop();
- 
-        // Construire le chemin complet du fichier CV
-        const cvFilePath = join(__dirname, '..', 'uploads', 'certif', cvFileName);
- 
-        return { path: cvFilePath };
-    } catch (error) {
-        console.error('Erreur lors de la récupération du CV :', error);
-        throw new Error('Impossible de récupérer le CV.');
-    }
-}*/

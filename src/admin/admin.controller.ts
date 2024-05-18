@@ -133,12 +133,20 @@ export class AdminController {
     const totalPublications = await this.adminService.getTotalPublications();
     const totalExperts = await this.adminService.getTotalExperts();
     const totalExpertsRequests = await this.adminService.getTotalExperts();
+    const TotalDemandExpertises = await this.adminService.getTotalDemandExpertises();
+    const totalAcceptedExpertises = await this.adminService.getCountAcceptedExpertises();
+    const totalRejectedExpertises = await this.adminService.getCountRejectedExpertises();
+    const totalEn_AttenteExpertises = await this.adminService.getCountEnAttentExpertises();
     return {
       message: 'Welcome to the admin dashboard',
       totalUsers,
       totalPublications,
       totalExperts,
-      totalExpertsRequests
+      totalExpertsRequests,
+      TotalDemandExpertises,
+      totalAcceptedExpertises,
+      totalRejectedExpertises,
+      totalEn_AttenteExpertises
     };
   }
 
@@ -179,14 +187,7 @@ export class AdminController {
     return this.adminService.deleteSubscription(id);
   }
 
-  /*@Put("update-account")
-  update(@Req() request: Request  & { admin: { ida: number } },
-      @Body() updateAccountDto: UpdateAccountDto,
-  ) {
-      const adminId = request.admin.ida
-      return this.adminService.updateAccount(adminId, updateAccountDto)
-  }*/
-
+  
 
   @UseGuards(AdminGuard)
   @Get('notifications')
@@ -308,7 +309,6 @@ export class AdminController {
   
       throw new BadRequestException('Missing key query parameter');
     }*/
-  @UseGuards(AdminGuard)
   @UseGuards(AdminGuard)
   @Get("search-experts")
   searchExperts(@Query('key') key: string) {

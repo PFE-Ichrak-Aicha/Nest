@@ -248,6 +248,34 @@ export class AdminService {
     return totalExpertsRequests;
   }
 
+  async getTotalDemandExpertises() : Promise <number> {
+    const totalDemandExpertises = await this.prismaService.demandExpertise.count();
+    return totalDemandExpertises;
+  }
+
+  async getCountAcceptedExpertises(): Promise<number> {
+    return this.prismaService.demandExpertise.count({
+      where: {
+        status: 'ACCEPTE'
+      }
+    });
+  }
+  
+  async getCountRejectedExpertises(): Promise<number> {
+    return this.prismaService.demandExpertise.count({
+      where: {
+        status: 'REJETE'
+      }
+    });
+  }
+
+  async getCountEnAttentExpertises(): Promise<number> {
+    return this.prismaService.demandExpertise.count({
+      where: {
+        status: 'EN_ATTENTE'
+      }
+    });
+  }
   async createSubscription(createSubscriptionDto: CreateSubscriptionDto) {
     const { name, duration, price, description } = createSubscriptionDto;
 
