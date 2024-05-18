@@ -339,7 +339,7 @@ export class PubController {
 
   @UseGuards(UserGuard)
   @Post(':pubId/expertise')
-  async demanderExpertise(@Param('pubId') pubId: number, @Body('expertId') expertId: number,
+  async demanderExpertise(@Param('pubId', ParseIntPipe) pubId: number, @Body('expertId') expertId: number,
     @Req() request: any,) {
     const payload = request.user;
     const userId = payload.sub;

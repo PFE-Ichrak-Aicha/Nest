@@ -271,6 +271,47 @@ async getRapportByExpertiseId(expertiseId: number, expertId: number) {
     throw new Error(`Failed to retrieve rapport: ${error.message}`);
   }
 }
+
+
+// Obtenir tous les rapports générés par un expert
+async getRapportsParExpert(expertId: number): Promise<Rapport[]> {
+  try {
+    const rapports = await this.prismaService.rapport.findMany({
+      where: {
+        expertId: expertId,
+      },
+      include: {
+        expertise: {
+          include: {
+            publication: true,
+            expert: true
+          }
+        }
+      }
+    });
+
+    return rapports;
+  } catch (error) {
+    throw new Error(`Échec de la récupération des rapports : ${error.message}`);
+  }
+}
+async getExpertisesByExpert(expertId: number): Promise<DemandExpertise[]> {
+  try {
+    const expertises = await this.prismaService.demandExpertise.findMany({
+      where: {
+        expertId: expertId,
+      },
+      include: {
+        user: true,
+        publication: true,
+      },
+    });
+
+    return expertises;
+  } catch (error) {
+    throw new Error(`Échec de la récupération des expertises : ${error.message}`);
+  }
+}
 /*async getRapportParExpertise(expertiseId: number, expertId: number): Promise<Rapport> {
   // Récupérer le rapport en utilisant l'ID de l'expertise et l'ID de l'expert
   const rapport = await this.prismaService.rapport.findUnique({
