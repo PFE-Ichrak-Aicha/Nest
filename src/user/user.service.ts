@@ -7,7 +7,7 @@ import { DeleteAccountDto } from 'dto/deleteAccountDto';
 import * as bcrypt from 'bcrypt';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { Publication, User } from '@prisma/client';
-
+import { Notification } from '@prisma/client';
 export interface UserWithoutPassword extends Omit<User, 'MotDePasse'> { }
 export type AdminUserCreateInput = {
   email: string;
@@ -200,6 +200,43 @@ export class UserService {
     } catch (error) {
       // Gérer les erreurs potentielles
       throw new Error('Failed to update profile image');
+    }
+  }
+
+// Notification Service
+async getNotificationsByUserId(userId: number): Promise<Notification[]> {
+  return this.prismaService.notification.findMany({
+    where: {
+      userId: userId
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+}
+  async markNotificationAsRead(notificationId: number): Promise<Notification> {
+    try {
+      const notification = await this.prismaService.notification.findUnique({
+        where: { idn: notificationId },
+      });
+
+      if (!notification) {
+        throw new Error(
+          `Notification avec l'ID ${notificationId} non trouvée.`,
+        );
+      }
+
+      // Marquer la notification comme lue
+      const updatedNotification = await this.prismaService.notification.update({
+        where: { idn: notificationId },
+        data: { isRead: true },
+      });
+
+      return updatedNotification;
+    } catch (error) {
+      throw new Error(
+        `Échec de la mise à jour de la notification : ${error.message}`,
+      );
     }
   }
 

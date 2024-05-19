@@ -525,7 +525,7 @@ export class PubService {
       transmission,
       carrassorie,
       sellerie,
-      equippements,
+      equippements = [],
     } = updatePubDto;
 
     // Mettre à jour les informations de la publication

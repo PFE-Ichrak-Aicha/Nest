@@ -223,12 +223,12 @@ export class ExpertService {
     };
     if (status === ExpertiseStatus.ACCEPTE) {
       await this.notificationService.createNotificationToUser(
-        { userId: demande.userId, status: 'acceptée' },
+        { userId: demande.userId, expertId: demande.expertId,status: 'acceptée' },
         null,
       );
     } else if (status === ExpertiseStatus.REJETE) {
       await this.notificationService.createNotificationToUser(
-        { userId: demande.userId, status: 'refusée' },
+        { userId: demande.userId, expertId: demande.expertId ,status: 'refusée' },
         null,
       );
     }

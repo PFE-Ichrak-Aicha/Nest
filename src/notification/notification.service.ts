@@ -80,15 +80,17 @@ export class NotificationService {
   }
   async createNotificationToUser(content: any, client: Socket) {
     try {
-      const user = await this.prisma.user.findUnique({
+      const expert = await this.prisma.expert.findUnique({
         where: {
-          id: content.userId
+          ide: content.expertId
         },
         select: {
-          Nom: true,
-          Prenom: true
+          email: true,
+         
         }
       });
+     
+
       const status = content.status === 'acceptée' ? 'acceptée' : 'refusée';
   
       const notification = {
@@ -96,6 +98,8 @@ export class NotificationService {
         body: `Votre demande d'expertise a été ${status}.`,
         data: {
          // userId: content.userId,
+         userId: content.userId,
+         expertId: content.expertId,
           status: status,
         },
       };
@@ -105,6 +109,7 @@ export class NotificationService {
           content: JSON.stringify(notification),
           isRead: false,
           userId: content.userId,
+          expertId: content.expertId
         },
       });
   
