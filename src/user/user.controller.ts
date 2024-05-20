@@ -15,6 +15,7 @@ import {
   NotFoundException,
   Patch,
 } from '@nestjs/common';
+import { Socket } from 'socket.io';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { UserService } from './user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -25,12 +26,15 @@ import * as multer from 'multer';
 import { UserWithoutPassword } from './user.service';
 import { UserGuard } from './user.guard';
 import { Notification } from '@prisma/client';
+import { InscriptionDto } from 'dto/inscriptionDto';
+
 interface CustomRequest extends Request {
   user: {
     id: number; // Assurez-vous que le type de ida est correct
     // Autres propriétés de l'administrateur si nécessaire
   };
 }
+
 export const storage = {
   storage: multer.diskStorage({
     destination: './uploads/profileimages',
@@ -44,20 +48,22 @@ export const storage = {
   }),
 };
 
+
 @Controller('user')
 export class UserController {
   uploadService: any;
   constructor(private readonly userService: UserService) {}
+
 
   @UseGuards(UserGuard)
   @Delete('delete-account')
   deleteAccount(@Req() request: any) {
     const payload = request.user;
     //console.log("PAYYYYYY", payload)
-
     const userId = payload.sub;
     return this.userService.deleteAccount(userId);
   }
+
 
   @UseGuards(UserGuard)
   @Put('update-account')
@@ -67,11 +73,11 @@ export class UserController {
   ): Promise<any> {
     const payload = request.user;
     console.log('PAYYYYYY', payload);
-
     const userId = payload.sub;
     //const userId = request.user["id"]
     return this.userService.updateAccount(userId, updateAccountDto);
   }
+
 
   @UseGuards(UserGuard)
   @Post('upload')
@@ -90,6 +96,7 @@ export class UserController {
     return of({ imagePath: file.filename });
   }
 
+
   @UseGuards(UserGuard)
   @Put('update-profile-image')
   @UseInterceptors(FileInterceptor('file', storage))
@@ -102,6 +109,7 @@ export class UserController {
     return from(this.userService.updateProfileImage(userId, file.filename));
   }
 
+
   @UseGuards(UserGuard)
   @Get('notifications')
   async getNotifications(@Req() request: any) {
@@ -110,6 +118,13 @@ export class UserController {
   
     return this.userService.getNotificationsByUserId(userId);
   }
+
+
+  @Post('demande-creation-compte')
+async demandeCreationCompte(@Body() inscriptionDto: InscriptionDto,  @Req() req: any) {
+  const client: Socket = req
+  return this.userService.demandeCreationCompte(inscriptionDto,client);
+}
 
   @UseGuards(UseGuards)
   @Patch('notifications/:notificationId')
@@ -149,4 +164,5 @@ export class UserController {
     const userId = payload && payload.sub ? payload.sub : null;
     return this.userService.getUserById(userId);
   }
+  
 }

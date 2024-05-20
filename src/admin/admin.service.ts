@@ -410,6 +410,10 @@ export class AdminService {
         throw new Error(`Request with ID ${expertReqId} not found.`);
       }
 
+      if (currentRequest.status === 'refusé') {
+        throw new Error(`Request with ID ${expertReqId} has already been refused.`);
+      }
+  
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(currentRequest.email, saltRounds);
       const newExpert = await this.prisma.expert.create({
@@ -451,7 +455,9 @@ export class AdminService {
       if (!currentRequest) {
         throw new Error(`Request with ID ${expertReqId} not found.`);
       }
-
+      if (currentRequest.status === 'approuvé') {
+        throw new Error(`Request with ID ${expertReqId} has already been approved.`);
+      }
       await this.prisma.expertRequest.update({
         where: { ider: id },
         data: { status: 'refusé' },
@@ -599,6 +605,71 @@ export class AdminService {
       },
     });
   }
+
+
+  async getDemandes() {
+    return this.prismaService.creationCompteRequest.findMany({
+      where: { status: 'en attente' },
+    });
+  }
+  
+  async accepterDemande(id: number) {
+    const request = await this.prismaService.creationCompteRequest.findUnique({
+      where: { id },
+    });
+  
+    if (!request) {
+      throw new NotFoundException('Demande non trouvée.');
+    }
+  
+    // Créer le compte utilisateur
+    const user = await this.prismaService.user.create({
+      data: {
+        Nom: request.nom,
+        Prenom: request.prenom,
+        NumTel: request.telephone,
+        Adresse: request.adresse,
+        email: request.email,
+        MotDePasse: request.motDePasse,
+        Ville: request.ville,
+        CodePostal: request.codePostal,
+        //PhotoProfil: request.photoProfil,
+      },
+    });
+  
+    // Mettre à jour le statut de la demande
+    await this.prismaService.creationCompteRequest.update({
+      where: { id },
+      data: { status: 'accepté' },
+    });
+  
+    // Envoyer un email à l'utilisateur avec ses identifiants
+    await this.mailerService.sendCreationCompteEmail(request.email, request.motDePasse);
+  
+    return 'Demande acceptée et compte créé avec succès.';
+  }
+  
+  async refuserDemande(id: number) {
+    const request = await this.prismaService.creationCompteRequest.findUnique({
+      where: { id },
+    });
+  
+    if (!request) {
+      throw new NotFoundException('Demande non trouvée.');
+    }
+  
+    // Mettre à jour le statut de la demande
+    await this.prismaService.creationCompteRequest.update({
+      where: { id },
+      data: { status: 'refusé' },
+    });
+  
+    // Envoyer un email à l'utilisateur pour l'informer du refus
+    await this.mailerService.sendDemandeRefuseeEmail(request.email);
+  
+    return 'Demande refusée.';
+  }
+
 
   /*async searchExperts(key: string) {
     const keyword = key

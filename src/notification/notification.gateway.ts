@@ -30,10 +30,13 @@ export class NotificationGateway {
     // Stocker les informations de l'administrateur dans le contexte de la connexion
     this.connectedAdmins.set(client.id, admin);
   }
+
+
   handleDisconnect(client: Socket) {
     // Supprimer la connexion de l'administrateur
     this.connectedAdmins.delete(client.id);
   }
+
 
   @SubscribeMessage('sendNotificationToAdmin')
   sendNotificationToAdmin(content: any, client: Socket) {
@@ -42,16 +45,27 @@ export class NotificationGateway {
     });
   }
   
+
   @SubscribeMessage('sendNotificationToExpert')
   sendNotificationToExpert(content: any, client: Socket) {
     this.server.emit('notificationToExpert', (res) => {
       console.log('notification send with success', content);
     });
   }
+
+
   @SubscribeMessage('sendNotificationToUser')
   sendNotificationToUser(content: any, client : Socket){
     this.server.emit('notificationToUser',(res) =>{
       console.log('notification send with success' ,content)
     })
   }
+  @SubscribeMessage('notifierAdmin')
+  async notifierAdmin(content: any, client: Socket) {
+   // const notification = await this.notificationService.createNotificationToAdmin(data);
+    this.server.emit('notificationToAdmin', 'notificationToUser',(res) =>{
+      console.log('notification send with success' ,content)
+    })
+  }
+  
 }

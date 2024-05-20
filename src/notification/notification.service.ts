@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationGateway } from './notification.gateway';
 import { Socket } from 'socket.io'
-import { User } from '@prisma/client';
+import { CreationCompteRequest, User } from '@prisma/client';
 @Injectable()
 export class NotificationService {
   constructor(private prisma: PrismaService, private notificationGateway: NotificationGateway) { }
@@ -41,6 +41,8 @@ export class NotificationService {
       throw new Error(error)
     }
   }
+
+
   async createNotificationToExpert(content: any, client: Socket) {
     try {
       const user = await this.prisma.user.findUnique({
@@ -78,6 +80,8 @@ export class NotificationService {
       throw new Error(error);
     }
   }
+
+
   async createNotificationToUser(content: any, client: Socket) {
     try {
       const expert = await this.prisma.expert.findUnique({
@@ -89,10 +93,7 @@ export class NotificationService {
          
         }
       });
-     
-
       const status = content.status === 'acceptée' ? 'acceptée' : 'refusée';
-  
       const notification = {
         title: 'Notification pour l\'utilisateur${user.Nom} ${user.Prenom} ',
         body: `Votre demande d'expertise a été ${status}.`,
@@ -103,7 +104,6 @@ export class NotificationService {
           status: status,
         },
       };
-  
       const newNotification = await this.prisma.notification.create({
         data: {
           content: JSON.stringify(notification),
@@ -112,14 +112,44 @@ export class NotificationService {
           expertId: content.expertId
         },
       });
-  
       this.notificationGateway.sendNotificationToUser(notification, client);
       return newNotification;
     } catch (error) {
       throw new Error(error);
     }
   }
+  async notifierAdminDemandeCreationCompte(content: any, client: Socket) {
+    try {
+      const notification = {
+        title: 'Nouvelle demande de création de compte',
+        body: `Une nouvelle demande de création de compte a été créée par ${content.nom} ${content.prenom}.`,
+        data: {
+          //requestId:content.id,
+          nom : content.nom,
+          prenom : content.prenom,
+          email : content.email,
+          adresse : content.email,
+          ville: content.ville,
+          codePostal: content.codePostal,
 
+        },
+      };
+  
+      const newNotification = await this.prisma.notification.create({
+        data: {
+          content: JSON.stringify(notification),
+          isRead: false,
+          adminId: 1, // ID de l'administrateur
+        },
+      });
+  
+      this.notificationGateway.notifierAdmin(notification, client);
+    return newNotification
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+  
 }
 
 

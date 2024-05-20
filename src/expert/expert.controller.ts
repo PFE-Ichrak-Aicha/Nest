@@ -120,6 +120,18 @@ export class ExpertController {
     const expertId = payload.sub;
     return this.expertService.getExpertisesByExpert(expertId);
   }
+
+
+  @UseGuards(ExpertGuard)
+  @Put('update-profile-image')
+  @UseInterceptors(FileInterceptor('file', storage))
+  updateProfileImage(@UploadedFile() file, @Req() request: any): Observable<Object> {
+    const payload = request.user;
+    const adminId = payload.sub;
+    return from(this.expertService.updateProfileImage(adminId, file.filename));
+  }
+
+
  @UseGuards(ExpertGuard)
   @Get('notifications')
   async getNotifications(@Req() request: any): Promise<Notification[]> {
@@ -128,6 +140,8 @@ export class ExpertController {
 
     return this.expertService.getNotificationsByExpertId(expertId);
   }
+
+  
   @Get('profile-image/:id')
   async findProfileImage(@Param('id', ParseIntPipe) adminId: number, @Res() res): Promise<void> {
     // Récupérez le nom de l'image à partir de la base de données en fonction de l'ID de l'utilisateur
@@ -146,14 +160,7 @@ export class ExpertController {
   }
 
 
-  @UseGuards(ExpertGuard)
-  @Put('update-profile-image')
-  @UseInterceptors(FileInterceptor('file', storage))
-  updateProfileImage(@UploadedFile() file, @Req() request: any): Observable<Object> {
-    const payload = request.user;
-    const adminId = payload.sub;
-    return from(this.expertService.updateProfileImage(adminId, file.filename));
-  }
+
 
 
   @UseGuards(ExpertGuard)
@@ -244,6 +251,7 @@ export class ExpertController {
 
 
 }
+
 function getExtension(mimetype: string): string {
   switch (mimetype) {
     case 'image/jpeg':

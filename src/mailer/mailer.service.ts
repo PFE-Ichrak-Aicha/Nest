@@ -70,76 +70,80 @@
 //     }*/
 // }
 
-
-
 import { Injectable } from '@nestjs/common';
 import { FormExpertDto } from 'dto/formExpertDto';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailerService {
-    private async transporter() {
-        const transport = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'yahyaouiad28@gmail.com',
-                pass: 'hewr kyyd chea ddmh'
-            }
-        });
-        return transport;
-    }
+  private async transporter() {
+    const transport = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'yahyaouiad28@gmail.com',
+        pass: 'hewr kyyd chea ddmh',
+      },
+    });
+    return transport;
+  }
 
+  async sendInscriptionConfirmation(userEmail: string) {
+    (await this.transporter()).sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: 'Inscription',
+      html: "<h3>Confirmation d'inscription</h3>",
+    });
+  }
 
-    async sendInscriptionConfirmation(userEmail: string) {
-        (await this.transporter()).sendMail({
-            from: 'yahyaouiad28@gmail.com',
-            to: userEmail,
-            subject: 'Inscription',
-            html: '<h3>Confirmation d\'inscription</h3>'
-        });
-    }
-
-    async sendResetPassRequest(userEmail: string, code: string) {
-        const url = ''; // Your password reset URL if necessary
-        const transport = await this.transporter();
-        await transport.sendMail({
-            from: 'yahyaouiad28@gmail.com',
-            to: userEmail,
-            subject: 'Demande de réinitialisation de mot de passe',
-            html: `<a href="${url}">Réinitialiser le mot de passe</a><br><h6>Code de confirmation: <strong>${code}</strong></h6>
+  async sendResetPassRequest(userEmail: string, code: string) {
+    const url = ''; // Your password reset URL if necessary
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: 'Demande de réinitialisation de mot de passe',
+      html: `<a href="${url}">Réinitialiser le mot de passe</a><br><h6>Code de confirmation: <strong>${code}</strong></h6>
             <p>Le code expirera dans 15 minutes</p>`,
-        });
-    }
+    });
+  }
 
-    async sendResetPassConfirmationCode(userEmail: string, code: string) {
-        const transport = await this.transporter();
-        await transport.sendMail({
-            from: 'yahyaouiad28@gmail.com',
-            to: userEmail,
-            subject: 'Vérification du code de réinitialisation de mot de passe',
-            html: `<h3>Veuillez saisir le code de vérification pour réinitialiser votre mot de passe.</h3><br><h6>Code de confirmation: <strong>${code}</strong></h6>`,
-        });
-    }
+  async sendResetPassConfirmationCode(userEmail: string, code: string) {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: 'Vérification du code de réinitialisation de mot de passe',
+      html: `<h3>Veuillez saisir le code de vérification pour réinitialiser votre mot de passe.</h3><br><h6>Code de confirmation: <strong>${code}</strong></h6>`,
+    });
+  }
 
-    async sendResetPass(userEmail: string, url: string, code: string): Promise<void> {
-        const transport = await this.transporter();
-        await transport.sendMail({
-            from: 'yahyaouiad28@gmail.com',
-            to: userEmail,
-            subject: 'Demande de réinitialisation de mot de passe',
-            html: `<p>Vous avez demandé une réinitialisation de mot de passe.</p>
+  async sendResetPass(
+    userEmail: string,
+    url: string,
+    code: string,
+  ): Promise<void> {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: 'Demande de réinitialisation de mot de passe',
+      html: `<p>Vous avez demandé une réinitialisation de mot de passe.</p>
                    <p>Veuillez <a href="${url}?code=${code}">cliquer ici</a> pour réinitialiser votre mot de passe.</p>
                    <p>Votre code de vérification est : ${code}</p>
-                   <p>Le code expirera dans 15 minutes.</p>`
-        });
-    }
-    async sendExpertDemand(formExpertDto: FormExpertDto, cv?: Express.Multer.File) {
-        const transport = await this.transporter();
-        await transport.sendMail({
-            from: 'yahyaouiad28@gmail.com',
-            to: 'admin@example.com',
-            subject: 'Nouvelle demande d\'expert',
-            html: `<p>Un nouveau visiteur a demandé à devenir expert.</p>
+                   <p>Le code expirera dans 15 minutes.</p>`,
+    });
+  }
+  async sendExpertDemand(
+    formExpertDto: FormExpertDto,
+    cv?: Express.Multer.File,
+  ) {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: 'admin@example.com',
+      subject: "Nouvelle demande d'expert",
+      html: `<p>Un nouveau visiteur a demandé à devenir expert.</p>
                  <p>Voici ses informations:</p>
                  <ul>
                    <li>Nom: ${formExpertDto.firstName}</li>
@@ -148,29 +152,56 @@ export class MailerService {
                    <li>Ville: ${formExpertDto.city}</li>
                  </ul>
                  <p>Vous pouvez consulter sa demande en cliquant <a href="${process.env.ADMIN_URL}/experts/demands">ici</a>.</p>`,
-        });
-    }
+    });
+  }
 
-    async sendExpertAcceptanceEmail(userEmail: string, userPassword: string): Promise<void> {
-        const transport = await this.transporter();
-        await transport.sendMail({
-            from: 'yahyaouiad28@gmail.com',
-            to: userEmail,
-            subject: 'Confirmation d\'acceptation en tant qu\'expert',
-            html: `<p>Votre demande pour devenir expert a été acceptée.</p>
+  async sendExpertAcceptanceEmail(
+    userEmail: string,
+    userPassword: string,
+  ): Promise<void> {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: "Confirmation d'acceptation en tant qu'expert",
+      html: `<p>Votre demande pour devenir expert a été acceptée.</p>
                    <p>Votre adresse e-mail: ${userEmail}</p>
                    <p>Votre mot de passe: ${userPassword}</p>
                    <p>Vous pouvez maintenant vous connecter en utilisant votre adresse e-mail comme identifiant et votre mot de passe.</p>`,
-        });
-    }
+    });
+  }
 
-    async sendExpertRefusalEmail(userEmail: string): Promise<void> {
-        const transport = await this.transporter();
-        await transport.sendMail({
-            from: 'yahyaouiad28@gmail.com',
-            to: userEmail,
-            subject: 'Refus de la demande d\'expertise',
-            html: '<p>Votre demande pour devenir expert a été refusée par l\'administrateur.</p>'
-        });
-    }
+  async sendExpertRefusalEmail(userEmail: string): Promise<void> {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: "Refus de la demande d'expertise",
+      html: "<p>Votre demande pour devenir expert a été refusée par l'administrateur.</p>",
+    });
+  }
+
+  async sendDemandeRefuseeEmail(userEmail: string) {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: 'Demande de création de compte refusée',
+      text: 'Votre demande de création de compte a été refusée.',
+      html: '<b>Votre demande de création de compte a été refusée.</b>',
+    });
+  }
+
+  async sendCreationCompteEmail(userEmail: string, userPassword: string) {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: 'Compte créé avec succès',
+      html: `<p>Votre compte a été créé avec succès..</p>
+            <p>Vos Vos identifiants sont : </p>
+                   <p>Votre adresse e-mail: ${userEmail}</p>
+                   <p>Votre mot de passe: ${userPassword}</p>`,
+    });
+  }
 }

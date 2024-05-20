@@ -5,9 +5,12 @@ import { JwtService } from '@nestjs/jwt';
 import { MailerService } from 'src/mailer/mailer.service';
 import { DeleteAccountDto } from 'dto/deleteAccountDto';
 import * as bcrypt from 'bcrypt';
+import { Socket } from 'socket.io';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { Publication, User } from '@prisma/client';
 import { Notification } from '@prisma/client';
+import { NotificationService } from 'src/notification/notification.service';
+import { InscriptionDto } from 'dto/inscriptionDto';
 export interface UserWithoutPassword extends Omit<User, 'MotDePasse'> { }
 export type AdminUserCreateInput = {
   email: string;
@@ -18,7 +21,7 @@ export type AdminUserCreateInput = {
 @Injectable()
 export class UserService {
 
-  constructor(private readonly prismaService: PrismaService,) { }
+  constructor(private readonly prismaService: PrismaService, private readonly notificationService: NotificationService) { }
 
   /* async createAdminUser(createAdminUserDto: CreateAdminUserDto) {
        const adminUserDto = plainToClass(CreateAdminUserDto, createAdminUserDto);
@@ -240,5 +243,64 @@ async getNotificationsByUserId(userId: number): Promise<Notification[]> {
     }
   }
 
-
+  async demandeCreationCompte(inscriptionDto: InscriptionDto, client : Socket) {
+    try {
+      const { Nom, Prenom, NumTel, Adresse, email, MotDePasse, Ville, CodePostal, PhotoProfil } = inscriptionDto;
+  
+      // Vérifier si un compte existe déjà avec cet email
+      const existingUser = await this.prismaService.user.findUnique({
+        where: { email },
+      });
+  
+      if (existingUser) {
+        throw new BadRequestException('Un compte existe déjà avec cet email.');
+      }
+  
+      // Créer une nouvelle demande de création de compte
+      const newRequest = await this.prismaService.creationCompteRequest.create({
+        data: {
+          nom : inscriptionDto.Nom,
+          prenom : inscriptionDto.Prenom,
+          telephone : inscriptionDto.NumTel,
+          adresse : inscriptionDto.Adresse,
+          email: inscriptionDto.email,
+          motDePasse : inscriptionDto.MotDePasse,
+          ville : inscriptionDto.Ville,
+          codePostal : inscriptionDto.CodePostal,
+          photoProfil: null,
+          status: 'en attente',
+          admin: { connect: { ida: 1 } },
+        },
+      });
+      const adminId = 1; // ID de l'admin auquel envoyer la demande
+      await this.prismaService.creationCompteRequest.update({
+        where: { id: newRequest.id },
+        data: {
+          admin: { connect: { ida: adminId } },
+        },
+      });
+      const notificationContent = {
+        nom : inscriptionDto.Nom,
+          prenom : inscriptionDto.Prenom,
+          telephone : inscriptionDto.NumTel,
+          adresse : inscriptionDto.Adresse,
+          email: inscriptionDto.email,
+          motDePasse : inscriptionDto.MotDePasse,
+          ville : inscriptionDto.Ville,
+          codePostal : inscriptionDto.CodePostal,
+          photoProfil: null,
+      };
+      console.log(
+        'here is notificationContent;',
+        JSON.stringify(notificationContent),
+      );
+      // Envoyer une notification à l'admin
+      await this.notificationService.notifierAdminDemandeCreationCompte( notificationContent,
+        client);
+        console.log('Notification sent to admin successfully.');
+      return 'Demande de création de compte envoyée avec succès.';
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 }
