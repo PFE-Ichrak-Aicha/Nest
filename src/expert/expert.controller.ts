@@ -1,7 +1,7 @@
 import { Body, Controller, Param, Post, UploadedFile, UseInterceptors, Get, Delete, Put, Req, UseGuards, Request, NotFoundException, ParseIntPipe, Res, ForbiddenException, Patch } from '@nestjs/common';
 import * as multer from 'multer';
 import { ExpertService } from './expert.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, MulterModule } from '@nestjs/platform-express';
 import { FormExpertDto } from 'dto/formExpertDto';
 import { MailerService } from 'src/mailer/mailer.service';
 import { Socket } from 'socket.io';
@@ -13,14 +13,7 @@ import { DemandExpertise, ExpertiseStatus, Rapport } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRapportDto } from 'dto/createRapportDto';
 import { Notification } from '@prisma/client';
-const certifStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/certif');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${file.fieldname}-${Date.now()}${getExtension(file.mimetype)}`);
-  },
-});
+//import { certifstorage } from './expert.service';
 const upload = multer({ dest: 'uploads/certif' });
 export const storage = {
   storage: multer.diskStorage({
@@ -34,20 +27,31 @@ export const storage = {
     }
   }),
 }
+export const certifstorage = {
+  storage: multer.diskStorage({
+    destination: './uploads/certif',
+    filename: (req, file, cb) => {
+      console.log('Configuration du stockage :', file);
+      let splitedName = file.originalname.split('.')
+      const filename: string = splitedName[0];
+      const extention: string = file.mimetype.split('/')[1];;
+      cb(null, `${filename}.${extention}`);
+    }
+  }),
+}
 @Controller('expert')
 export class ExpertController {
   constructor(private readonly expertService: ExpertService, private readonly mailerService: MailerService, private readonly prismaService: PrismaService) { }
 
-  //demande d'etre un expert
   @Post('demandExp')
-  @UseInterceptors(FileInterceptor('cv', { dest: 'uploads/certif' }))
+  @UseInterceptors(FileInterceptor('cv',certifstorage))
   async createExpertRequest(
     @UploadedFile() cv,
     @Body() requestData: FormExpertDto,
     @Req() req: any
   ) {
     const client: Socket = req;
-    return this.expertService.createExpertRequest(requestData, cv.originalname, client);
+    return this.expertService.createExpertRequest(requestData, cv, client);
   }
 
 

@@ -21,7 +21,18 @@ import {
 } from '@prisma/client';
 import { CreateRapportDto } from 'dto/createRapportDto';
 import { Notification } from '@prisma/client';
-
+export const certifstorage = {
+  storage: multer.diskStorage({
+    destination: './uploads/certif',
+    filename: (req, file, cb) => {
+      console.log('Configuration du stockage :', file);
+      let splitedName = file.originalname.split('.')
+      const filename: string = splitedName[0];
+      const extention: string = file.mimetype.split('/')[1];;
+      cb(null, `${filename}.${extention}`);
+    }
+  }),
+}
 @Injectable()
 export class ExpertService {
   constructor(
@@ -33,7 +44,7 @@ export class ExpertService {
 
   async createExpertRequest(
     requestData: FormExpertDto,
-    cv: string,
+    cv:Express.Multer.File,
     client: Socket,
   ) {
     try {
@@ -43,7 +54,7 @@ export class ExpertService {
           lastName: requestData.lastName,
           email: requestData.email,
           telephone: requestData.tel,
-          cv: cv,
+          cv: cv.originalname,
           city: requestData.city,
           description: requestData.description,
           cout: requestData.cout,
@@ -60,7 +71,7 @@ export class ExpertService {
         },
       });
       // Générer le lien vers le fichier CV
-      const cvLink = `http://localhost:3000/uploads/certif/${cv}`;
+      const cvLink = `http://localhost:3000/uploads/certif/${cv.originalname}`;
       // Créer le contenu de la notification avec le lien vers le CV
       const notificationContent = {
         firstName: requestData.firstName,
@@ -70,7 +81,7 @@ export class ExpertService {
         city: requestData.city,
         description: requestData.description,
         cout: requestData.cout,
-        cv: cv,
+        cv: cv.originalname,
         cvLink,
       };
       //  const notificationContentString = JSON.stringify(notificationContent);
@@ -218,12 +229,12 @@ export class ExpertService {
     const notificationContent = {
       pubId: demande.pubId,
       userId: demande.userId,
-      expertId: demande.expertId,
+      //expertId: demande.expertId,
       status: status,
     };
     if (status === ExpertiseStatus.ACCEPTE) {
       await this.notificationService.createNotificationToUser(
-        { userId: demande.userId, expertId: demande.expertId,status: 'acceptée' },
+        { userId: demande.userId,status: 'acceptée' },
         null,
       );
     } else if (status === ExpertiseStatus.REJETE) {

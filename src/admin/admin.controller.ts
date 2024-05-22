@@ -1,4 +1,4 @@
-import { Controller, Param, ParseIntPipe, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, InternalServerErrorException, Param, ParseIntPipe, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post, Get, Query, BadRequestException } from '@nestjs/common';
@@ -9,12 +9,14 @@ import { UpdateSubscriptionDto } from 'dto/updateSubscriptionDto';
 import { UpdateAccountDto } from 'dto/updateAccountDto';
 import { Notification } from '@prisma/client';
 import { ExpertRequest } from '@prisma/client';
+import { Response } from 'express';
 import { Res } from '@nestjs/common';
 import { NotFoundException } from '@nestjs/common';
 import { NotificationService } from 'src/notification/notification.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Observable, from, of } from 'rxjs';
 import * as multer from 'multer';
+import * as fs from 'fs';
 import path, { join } from 'path';
 import { PubService } from 'src/pub/pub.service';
 interface SearchPublicationsOptions {
@@ -239,7 +241,7 @@ async getDemandes() {
 
 @UseGuards(AdminGuard)
 @Post('demandes-creation-compte/:id/accepter')
-async accepterDemande(@Param('id') id: number) {
+async accepterDemande(@Param('id', ParseIntPipe) id: number) {
   return this.adminService.accepterDemande(id);
 }
 
@@ -301,12 +303,12 @@ async refuserDemande(@Param('id') id: number) {
   }
 
 
-  @UseGuards(AdminGuard)
+ /* @UseGuards(AdminGuard)
   @Get('notifications/:id/cv')
   async getCVFromNotification(@Param('id', ParseIntPipe) id: number, @Res() res): Promise<void> {
     const cvContent = await this.adminService.getCVFromNotification(id);
     res.sendFile(cvContent.path, { root: '.' });
-  }
+  }*/
 
 
   @UseGuards(AdminGuard)
@@ -338,23 +340,44 @@ async refuserDemande(@Param('id') id: number) {
 
   @UseGuards(AdminGuard)
   @Get('expert-request/:id')
-  async getExpertRequestByID(@Param('id') id: number): Promise<ExpertRequest> {
+  async getExpertRequestByID(@Param('id',ParseIntPipe) id: number): Promise<ExpertRequest> {
     return this.adminService.getExpertRequestById(id);
   }
 
+  @Get('notifications/:id/cv')
+  async getCVV(@Param('id',ParseIntPipe) id: number, @Res() res: Response) {
+    try {
+      const notification = await this.notificationService.getNotificationById(id);
+      if (!notification || !notification.content) {
+        throw new NotFoundException('Notification content not found');
+      }
+      const notificationData = JSON.parse(notification.content);
+      if (!notificationData || !notificationData.cvLink) {
+        throw new NotFoundException('CV link not found in notification');
+      }
+      const cvLink = notificationData.cvLink;
+      console.log('Notification content:', notification.content);
 
+      // Redirection vers l'URL du CV
+      res.redirect(cvLink);
+    } catch (error) {
+      console.error('Error downloading CV:', error);
+      throw new InternalServerErrorException('Error downloading CV');
+    }
+  }
+@Get(':filename')
+async getCV(@Param('filename') filename: string, @Res() res: Response) {
+  const filePath = path.join(__dirname, '..', 'uploads', 'certif', filename);
 
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      return res.status(404).send('CV not found');
+    }
 
-
-
-
-
-
-
-
-
-
-
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  });
+}
 }
 
 

@@ -376,15 +376,17 @@ model CreationCompteRequest {
   nom       String
   prenom    String
   email     String   @unique
-  telephone String
-  motDePasse String
-  adresse    String
-  ville      String
-  codePostal String
+  telephone String?
+ // motDePasse String
+  adresse    String?
+  ville      String?
+  commentaire String
+  codePostal String?
+  
   photoProfil String?
   status     String   @default("en attente")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  admin      Admin?   @relation(fields: [adminId], references: [ida])
-  adminId    Int?
+  admin      Admin   @relation(fields: [adminId], references: [ida])
+  adminId    Int
 }

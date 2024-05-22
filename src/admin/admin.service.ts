@@ -11,7 +11,8 @@ import * as bcrypt from 'bcrypt';
 import { Notification } from '@prisma/client';
 import { ExpertRequest } from '@prisma/client';
 import { PubService } from 'src/pub/pub.service';
-import { join } from 'path';
+//import { join } from 'path';
+import path, { join } from 'path';
 interface SearchPublicationsOptions {
   query?: string;
   marque?: string;
@@ -376,27 +377,32 @@ export class AdminService {
       console.error('Error getting and marking notification as read:', error);
       throw new Error('Failed to get and mark notification as read.');
     }
-  } async getCVFromNotification(notificationId: number): Promise<{ path: string }> {
-    const notification = await this.prisma.notification.findUnique({
-      where: { idn: notificationId },
-    });
-
-    if (!notification || !notification.content) {
-      throw new NotFoundException('Notification not found or missing content');
-    }
-
-    const content = JSON.parse(notification.content);
-    const cvLink = content.cvLink;
-
-    // Construire le chemin complet du fichier CV
-    const cvFilePath = join(__dirname, '..', 'uploads', 'certif', cvLink);
-    if (!cvFilePath) {
-      throw new NotFoundException('CV not found');
-    }
-
-    return { path: cvFilePath };
   }
-
+   async getCVFromNotification(id: number): Promise<string | null> {
+    try {
+      const notification = await this.prisma.notification.findUnique({
+        where: {
+          idn: id,
+        },
+      });
+  
+      if (!notification) {
+        return null;
+      }
+  
+      const cvLink = JSON.parse(notification.content).data.cvLink;
+  
+      if (!cvLink) {
+        return null;
+      }
+  
+      const cvPath = join(process.cwd(), 'uploads', 'certif', path.basename(cvLink));
+      return cvPath;
+    } catch (error) {
+      console.error('Error fetching CV:', error);
+      throw new Error('Error fetching CV');
+    }
+  }
   async confirmRequest(expertReqId: any): Promise<boolean> {
     try {
 
@@ -615,7 +621,7 @@ export class AdminService {
   
   async accepterDemande(id: number) {
     const request = await this.prismaService.creationCompteRequest.findUnique({
-      where: { id },
+      where: { id: id },
     });
   
     if (!request) {
@@ -623,16 +629,18 @@ export class AdminService {
     }
   
     // Créer le compte utilisateur
-    const user = await this.prismaService.user.create({
+    const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(request.email, saltRounds);
+    const newUser = await this.prismaService.user.create({
       data: {
         Nom: request.nom,
         Prenom: request.prenom,
-        NumTel: request.telephone,
-        Adresse: request.adresse,
+        NumTel:  request.telephone ?? "",
+        Adresse: request.adresse ?? "",
         email: request.email,
-        MotDePasse: request.motDePasse,
-        Ville: request.ville,
-        CodePostal: request.codePostal,
+        MotDePasse: hashedPassword,
+        Ville: request.ville ?? "",
+        CodePostal: request.codePostal ?? "",
         //PhotoProfil: request.photoProfil,
       },
     });
@@ -644,7 +652,7 @@ export class AdminService {
     });
   
     // Envoyer un email à l'utilisateur avec ses identifiants
-    await this.mailerService.sendCreationCompteEmail(request.email, request.motDePasse);
+    await this.mailerService.sendCreationCompteEmail(request.email, request.email);
   
     return 'Demande acceptée et compte créé avec succès.';
   }

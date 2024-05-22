@@ -27,6 +27,7 @@ import { UserWithoutPassword } from './user.service';
 import { UserGuard } from './user.guard';
 import { Notification } from '@prisma/client';
 import { InscriptionDto } from 'dto/inscriptionDto';
+import { DemandeDto } from 'dto/demandeDto';
 
 interface CustomRequest extends Request {
   user: {
@@ -115,15 +116,14 @@ export class UserController {
   async getNotifications(@Req() request: any) {
     const payload = request.user;
     const userId = payload.sub;
-  
     return this.userService.getNotificationsByUserId(userId);
   }
 
 
   @Post('demande-creation-compte')
-async demandeCreationCompte(@Body() inscriptionDto: InscriptionDto,  @Req() req: any) {
+async demandeCreationCompte(@Body() demandeDto:DemandeDto,  @Req() req: any) {
   const client: Socket = req
-  return this.userService.demandeCreationCompte(inscriptionDto,client);
+  return this.userService.demandeCreationCompte(demandeDto,client);
 }
 
   @UseGuards(UseGuards)

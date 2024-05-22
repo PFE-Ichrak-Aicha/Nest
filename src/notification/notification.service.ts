@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationGateway } from './notification.gateway';
+import { Notification } from '@prisma/client';
 import { Socket } from 'socket.io'
 import { CreationCompteRequest, User } from '@prisma/client';
 @Injectable()
@@ -51,10 +52,18 @@ export class NotificationService {
         },
         select: {
           Nom: true,
-          Prenom: true
+          Prenom: true,
+          id : true
         }
       });
-  
+      const expert = await this.prisma.expert.findUnique({
+        where: {
+          ide: content.expertId
+        },
+        select: {
+          email: true
+        }
+      });
       const notification = {
         title: 'Nouvelle demande d\'expertise',
         body: `${user.Nom} ${user.Prenom} a envoyé une nouvelle demande d'expertise pour la publication ${content.pubId}.`,
@@ -64,16 +73,14 @@ export class NotificationService {
           expertId: content.expertId
         }
       };
-  
       const newNotification = await this.prisma.notification.create({
         data: {
           content: JSON.stringify(notification),
           isRead: false,
           expertId: content.expertId,
-          userId: content.userId
+          userId:null
         }
       });
-  
       this.notificationGateway.sendNotificationToExpert(notification, client);
       return newNotification;
     } catch (error) {
@@ -84,13 +91,13 @@ export class NotificationService {
 
   async createNotificationToUser(content: any, client: Socket) {
     try {
-      const expert = await this.prisma.expert.findUnique({
+      const user = await this.prisma.user.findUnique({
         where: {
-          ide: content.expertId
+          id: content.userId
         },
         select: {
-          email: true,
-         
+          Nom: true,
+          Prenom: true
         }
       });
       const status = content.status === 'acceptée' ? 'acceptée' : 'refusée';
@@ -109,7 +116,7 @@ export class NotificationService {
           content: JSON.stringify(notification),
           isRead: false,
           userId: content.userId,
-          expertId: content.expertId
+          expertId: null
         },
       });
       this.notificationGateway.sendNotificationToUser(notification, client);
@@ -128,9 +135,10 @@ export class NotificationService {
           nom : content.nom,
           prenom : content.prenom,
           email : content.email,
-          adresse : content.email,
-          ville: content.ville,
-          codePostal: content.codePostal,
+          //adresse : content.email,
+          //ville: content.ville,
+          //codePostal: content.codePostal,
+          commentaire :content.commentaire
 
         },
       };
@@ -149,7 +157,18 @@ export class NotificationService {
       throw new Error(error);
     }
   }
-  
+  async getNotificationById(id: number): Promise<Notification | null> {
+    try {
+      return await this.prisma.notification.findUnique({
+        where: {
+          idn : id,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching notification:', error);
+      throw new Error('Error fetching notification');
+    }
+  }
 }
 
 

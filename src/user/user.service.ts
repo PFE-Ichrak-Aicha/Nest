@@ -11,6 +11,7 @@ import { Publication, User } from '@prisma/client';
 import { Notification } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
 import { InscriptionDto } from 'dto/inscriptionDto';
+import { DemandeDto } from 'dto/demandeDto';
 export interface UserWithoutPassword extends Omit<User, 'MotDePasse'> { }
 export type AdminUserCreateInput = {
   email: string;
@@ -243,9 +244,9 @@ async getNotificationsByUserId(userId: number): Promise<Notification[]> {
     }
   }
 
-  async demandeCreationCompte(inscriptionDto: InscriptionDto, client : Socket) {
+  async demandeCreationCompte(demandeDto: DemandeDto, client : Socket) {
     try {
-      const { Nom, Prenom, NumTel, Adresse, email, MotDePasse, Ville, CodePostal, PhotoProfil } = inscriptionDto;
+      const { Nom, Prenom, Adresse, email,commentaire } = demandeDto;
   
       // Vérifier si un compte existe déjà avec cet email
       const existingUser = await this.prismaService.user.findUnique({
@@ -259,14 +260,14 @@ async getNotificationsByUserId(userId: number): Promise<Notification[]> {
       // Créer une nouvelle demande de création de compte
       const newRequest = await this.prismaService.creationCompteRequest.create({
         data: {
-          nom : inscriptionDto.Nom,
-          prenom : inscriptionDto.Prenom,
-          telephone : inscriptionDto.NumTel,
-          adresse : inscriptionDto.Adresse,
-          email: inscriptionDto.email,
-          motDePasse : inscriptionDto.MotDePasse,
-          ville : inscriptionDto.Ville,
-          codePostal : inscriptionDto.CodePostal,
+          nom : demandeDto.Nom,
+          prenom : demandeDto.Prenom,
+          email: demandeDto.email,
+          telephone : null,
+          adresse : null,
+          ville : null,
+          commentaire : demandeDto.commentaire,
+          codePostal : null,
           photoProfil: null,
           status: 'en attente',
           admin: { connect: { ida: 1 } },
@@ -280,14 +281,15 @@ async getNotificationsByUserId(userId: number): Promise<Notification[]> {
         },
       });
       const notificationContent = {
-        nom : inscriptionDto.Nom,
-          prenom : inscriptionDto.Prenom,
-          telephone : inscriptionDto.NumTel,
-          adresse : inscriptionDto.Adresse,
-          email: inscriptionDto.email,
-          motDePasse : inscriptionDto.MotDePasse,
-          ville : inscriptionDto.Ville,
-          codePostal : inscriptionDto.CodePostal,
+        nom : demandeDto.Nom,
+          prenom : demandeDto.Prenom,
+          //telephone : demandeDto.NumTel,
+         // adresse : demandeDto.Adresse,
+          email: demandeDto.email,
+          //motDePasse : inscriptionDto.MotDePasse,
+          //ville : demandeDto.Ville,
+          //codePostal : demandeDto.CodePostal,
+         commentaire : demandeDto.commentaire,
           photoProfil: null,
       };
       console.log(
