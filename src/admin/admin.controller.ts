@@ -367,15 +367,12 @@ async refuserDemande(@Param('id') id: number) {
   }
 @Get(':filename')
 async getCV(@Param('filename') filename: string, @Res() res: Response) {
-  const filePath = path.join(__dirname, '..', 'uploads', 'certif', filename);
+  const filePath = join(process.cwd(), 'uploads', 'certif', filename);
 
-  fs.access(filePath, fs.constants.F_OK, (err) => {
+  res.sendFile(filePath, (err) => {
     if (err) {
-      return res.status(404).send('CV not found');
+      res.status(404).send('CV not found');
     }
-
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
   });
 }
 }
