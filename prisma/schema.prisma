@@ -36,14 +36,14 @@ model User {
 }
 
 model Admin {
-  ida            Int             @id @default(autoincrement())
-  email          String          @unique @db.VarChar(80)
-  MotDePasse     String          @db.VarChar(80)
-  PhotoProfil    String?
-  isAdmin        Boolean         @default(true)
-  expertRequests ExpertRequest[]
+  ida                   Int                     @id @default(autoincrement())
+  email                 String                  @unique @db.VarChar(80)
+  MotDePasse            String                  @db.VarChar(80)
+  PhotoProfil           String?
+  isAdmin               Boolean                 @default(true)
+  expertRequests        ExpertRequest[]
   creationCompteRequest CreationCompteRequest[]
-  notifications  Notification[]
+  notifications         Notification[]
 }
 
 model Publication {
@@ -371,22 +371,23 @@ model Notification {
   expert    Expert?  @relation(fields: [expertId], references: [ide])
   expertId  Int?
 }
+
 model CreationCompteRequest {
-  id        Int      @id @default(autoincrement())
-  nom       String
-  prenom    String
-  email     String   @unique
-  telephone String?
- // motDePasse String
-  adresse    String?
-  ville      String?
+  id          Int     @id @default(autoincrement())
+  nom         String
+  prenom      String
+  email       String  @unique
+  telephone   String?
+  // motDePasse String
+  adresse     String?
+  ville       String?
   commentaire String
-  codePostal String?
-  
+  codePostal  String?
+
   photoProfil String?
-  status     String   @default("en attente")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  admin      Admin   @relation(fields: [adminId], references: [ida])
-  adminId    Int
+  status      String   @default("en attente")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  admin       Admin    @relation(fields: [adminId], references: [ida])
+  adminId     Int
 }

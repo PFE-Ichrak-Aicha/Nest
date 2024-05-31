@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationGateway } from './notification.gateway';
 import { Notification } from '@prisma/client';
-import { Socket } from 'socket.io'
+import { Socket } from 'socket.io';
+import { Rapport } from '@prisma/client';
 import { CreationCompteRequest, User } from '@prisma/client';
 @Injectable()
 export class NotificationService {
@@ -157,6 +158,73 @@ export class NotificationService {
       throw new Error(error);
     }
   }
+
+  async notifierUtilisateurRapport(content: any, client: Socket) {
+  try {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: content.userId
+      },
+       select : {
+        Nom: true,
+        Prenom : true
+       }
+
+    });
+    const notification= {
+      title : 'Rapport d\'expertise disponible',
+      data : {
+         userId: content.userId
+      }
+    };
+    const newNotification = await this.prisma.notification.create({
+      data : {
+        content: JSON.stringify(notification),
+        isRead: false,
+        userId: content.userId,
+        expertId: null
+      },
+    });
+    this.notificationGateway.notifierUtilisateur(notification, client);
+    return newNotification;
+
+  }catch (error){
+    throw new Error(error);
+  }
+    /* const { userId, expertiseId } = content;
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId
+      },
+      select: {
+        Nom: true,
+        Prenom: true,
+        id: true
+      }
+    });
+
+    const notification = {
+      title: `Rapport d'expertise disponible`,
+      body: JSON.stringify(content)
+    };
+
+    await this.prisma.notification.create({
+      data: {
+        content: JSON.stringify(notification),
+        isRead: false,
+        userId
+      }
+    });
+
+    await this.prisma.demandExpertise.update({
+      where: { idde: expertiseId },
+      data: { rapportId: content.idr }
+    });
+
+    this.notificationGateway.notifierUtilisateur(client, notification);*/
+  }
+
   async getNotificationById(id: number): Promise<Notification | null> {
     try {
       return await this.prisma.notification.findUnique({

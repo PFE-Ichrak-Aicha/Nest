@@ -250,7 +250,7 @@ export class ExpertService {
   async createRapport(
     expertiseId: number,
     rapportData: CreateRapportDto,
-    expertId: number,
+    expertId: number, client : Socket
   ): Promise<Rapport> {
     // Vérifier si l'expertise existe et si elle a été acceptée
     const expertise = await this.prismaService.demandExpertise.findUnique({
@@ -297,10 +297,22 @@ export class ExpertService {
         commentaire_exp: rapportData.commentaire_exp,
       },
     });
-
+    //const notificationContent = {
+     // title: 'Nouveau rapport d\'expertise disponible',
+     // data: {
+     //   userId: expertise.userId,
+     // },
+    //};
+    const notificationContent = {
+      title: 'Nouveau rapport d\'expertise disponible',
+      data: {
+        userId: expertise.userId,
+      },
+    };
+    await this.notificationService.notifierUtilisateurRapport(notificationContent, client);
+  
     return newRapport;
   }
-
   async getRapportByExpertiseId(expertiseId: number, expertId: number) {
     try {
       const rapport = await this.prismaService.rapport.findUnique({

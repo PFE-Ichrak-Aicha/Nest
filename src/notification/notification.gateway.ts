@@ -10,22 +10,7 @@ export class NotificationGateway {
 
 
   private connectedAdmins: Map<string, Admin> = new Map();
-  /*async notifyAdmin(expertRequest: any) {
-    this.server.emit('new_expert_request', expertRequest);
-  }*/
-  /*emitNotification(notification: Notification): void {
-    this.server.emit('notification', notification);
-  }*/
-
-  /*@SubscribeMessage('subscribe')
-  handleSubscribe(@ConnectedSocket() client: Socket) {
-    client.join('notifications');
-  }
-
-  @SubscribeMessage('unsubscribe')
-  handleUnsubscribe(@ConnectedSocket() client: Socket) {
-    client.leave('notifications');
-  }*/
+ 
   handleConnection(client: Socket, @ConnectedSocket() admin: Admin) {
     // Stocker les informations de l'administrateur dans le contexte de la connexion
     this.connectedAdmins.set(client.id, admin);
@@ -66,6 +51,15 @@ export class NotificationGateway {
     this.server.emit('notificationToAdmin', 'notificationToUser',(res) =>{
       console.log('notification send with success' ,content)
     })
+  }
+  @SubscribeMessage('notifierUtilisateur')
+  async notifierUtilisateur(content: any,client: Socket) {
+   // const { userId, content } = data;
+this.server.emit('notificationToUser',(res) =>{
+  console.log('notification send with success' ,content)
+})
+    // Envoyer la notification à l'utilisateur spécifié
+    //this.server.to(`user-${userId}`).emit('notification', content);
   }
   
 }
