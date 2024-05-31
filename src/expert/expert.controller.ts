@@ -212,6 +212,7 @@ export class ExpertController {
   async createRapport(@Param('expertiseId', ParseIntPipe) expertiseId: number, @Body() rapportData: CreateRapportDto, @Req() request: any) {
     const payload = request.user;
     const expertId = payload.sub;
+    
     return this.expertService.createRapport(expertiseId, rapportData, expertId);
   }
 
