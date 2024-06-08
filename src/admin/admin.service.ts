@@ -755,6 +755,26 @@ export class AdminService {
       },
     });
   }
+
+  async getBlockedUsers(): Promise<any[]> {
+    const blockedUsers = await this.prismaService.user.findMany({
+      where: {
+        isBlocked: true,
+      },
+    });
+    return blockedUsers;
+  }
+
+  async getBlockedExperts(): Promise<any[]> {
+    const blockedExperts = await this.prismaService.expert.findMany({
+      where: {
+        isBlocked: true,
+      },
+    });
+    return blockedExperts;
+  }
+
+
   
 }
 

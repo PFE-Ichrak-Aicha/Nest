@@ -67,7 +67,17 @@ export class AdminController {
     return users;
   }
 
-
+  @Get('blocked-users')
+  async getBlockedUsers(@Req() req: Request, @Res() res: Response) {
+    const blockedUsers = await this.adminService.getBlockedUsers();
+    return res.status(200).json(blockedUsers);
+  }
+  
+  @Get('blocked-experts')
+  async getBlockedExperts(@Req() req: Request, @Res() res: Response) {
+    const blockedExperts = await this.adminService.getBlockedExperts();
+    return res.status(200).json(blockedExperts);
+  }
   @UseGuards(AdminGuard)
   @Get('Listepublications')
   async getAllPublications(): Promise<Partial<Publication>[]> {
