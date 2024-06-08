@@ -1,4 +1,4 @@
-import { Controller, InternalServerErrorException, Param, ParseIntPipe, Patch, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, ForbiddenException, InternalServerErrorException, Param, ParseIntPipe, Patch, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post, Get, Query, BadRequestException } from '@nestjs/common';
@@ -190,7 +190,18 @@ export class AdminController {
    const adminId = payload.sub;
    return this.adminService.updateAccount(adminId, updateAccountDto)
  }
-
+ @UseGuards(AdminGuard)
+ @Delete('delete/:id')
+ async delete(@Param('id', ParseIntPipe) pubid: number, @Req() request: any) {
+   const payload = request.user;
+   const userId = payload.sub;
+   const isAdmin = payload.isAdmin;
+ 
+   if (!isAdmin) {
+     throw new ForbiddenException("Forbidden action");
+   }
+   return this.pubService.deleteWithImages(pubid, userId);
+ }
  @UseGuards(AdminGuard)
  @Post('upload')
  @UseInterceptors(FileInterceptor('file', adstorage))

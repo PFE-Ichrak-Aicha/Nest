@@ -452,41 +452,56 @@ export class PubService {
   }*/
 
 
-  async deleteWithImages(pubid: number, payload: any) {
-    const userId = payload;
-    const publication = await this.prismaService.publication.findUnique({
-      where: { pubid },
-    });
-    if (!publication) {
-      throw new NotFoundException("Publication not found");
-    }
-    // verification of the user who is trying to delete the publication
-    if (publication.userId != userId) {
-      throw new ForbiddenException("Forbidden action");
-    }
-    // delete all images associated with the publication
-    await this.prismaService.image.deleteMany({
-      where: {
-        publicationId: pubid,
-      },
-    });
-
-    // Supprimer les relations many-to-many avec les équipements
-    await this.prismaService.equippementPublication.deleteMany({
-      where: {
-        publicationId: pubid,
-      },
-    });
-
-    // Supprimer la publication
-    await this.prismaService.publication.delete({
-      where: {
-        pubid,
-      },
-    });
-
-    return { data: 'Publication and associated images deleted' };
-  }
+    async deleteWithImages(pubid: number, payload: any) {
+      const userId = payload;
+      const publication = await this.prismaService.publication.findUnique({
+        where: { pubid },
+      });
+      if (!publication) {
+        throw new NotFoundException("Publication not found");
+      }
+      // verification of the user who is trying to delete the publication
+      if (publication.userId != userId) {
+        throw new ForbiddenException("Forbidden action");
+      }
+      
+      // Supprimer les rapports associés à la publication
+      await this.prismaService.demandExpertise.deleteMany({
+        where: {
+          pubId: pubid,
+        },
+      });
+    
+      // Supprimer les favoris associés à la publication
+      await this.prismaService.publicationFavorite.deleteMany({
+        where: {
+          publicationId: pubid,
+        },
+      });
+    
+      // Supprimer les images associées à la publication
+      await this.prismaService.image.deleteMany({
+        where: {
+          publicationId: pubid,
+        },
+      });
+    
+      // Supprimer les relations many-to-many avec les équipements
+      await this.prismaService.equippementPublication.deleteMany({
+        where: {
+          publicationId: pubid,
+        },
+      });
+    
+      // Supprimer la publication
+      await this.prismaService.publication.delete({
+        where: {
+          pubid,
+        },
+      });
+    
+      return { data: 'Publication and associated images deleted' };
+    }    
 
   /* async update(pubid: number, payload: any, updatePubDto: UpdatePubDto) {
      const userId = payload;

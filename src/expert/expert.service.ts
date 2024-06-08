@@ -456,7 +456,45 @@ export class ExpertService {
   
     return rejectedExpertises;
   }
-
+  async getPendingExpertises(expertId: number): Promise<DemandExpertise[]> {
+    const pendingExpertises = await this.prismaService.demandExpertise.findMany({
+      where: {
+        expertId: expertId,
+        status: 'EN_ATTENTE'
+      },
+      include: {
+        user: true,
+        publication: true,
+        expert: true
+      }
+    });
+  
+    if (pendingExpertises.length === 0) {
+      throw new Error('Aucune demande d\'expertise en attente trouvée.');
+    }
+  
+    return pendingExpertises;
+  }
+  async getAcceptedExpertisesWithoutReport(expertId: number): Promise<DemandExpertise[]> {
+    const acceptedExpertisesWithoutReport = await this.prismaService.demandExpertise.findMany({
+      where: {
+        expertId: expertId,
+        status: 'ACCEPTE',
+        rapport: null
+      },
+      include: {
+        user: true,
+        publication: true,
+        expert: true
+      }
+    });
+  
+    if (acceptedExpertisesWithoutReport.length === 0) {
+      throw new Error('Aucune demande d\'expertise acceptée sans rapport trouvée.');
+    }
+  
+    return acceptedExpertisesWithoutReport;
+  }
   // Expert Service
   async getNotificationsByExpertId(expertId: number): Promise<Notification[]> {
     try {

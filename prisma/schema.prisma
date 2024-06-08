@@ -194,7 +194,7 @@ model DemandExpertise {
   expert      Expert          @relation(fields: [expertId], references: [ide])
   rapport     Rapport?
   rapportId   Int?            @unique
- paye     Boolean  @default(false)
+  paye     Boolean  @default(false)
   @@unique([expertId, userId, pubId])
 }
 

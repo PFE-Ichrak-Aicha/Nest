@@ -107,7 +107,31 @@ export class ExpertController {
       throw new NotFoundException(error.message);
     }
   }
-  
+  @UseGuards(ExpertGuard)
+@Get('expertises/pending')
+async getPendingExpertises(@Req() request: any) {
+  const payload = request.user;
+  const expertId = payload.sub;
+
+  try {
+    return this.expertService.getPendingExpertises(expertId);
+  } catch (error) {
+    throw new NotFoundException(error.message);
+  }
+}
+@UseGuards(ExpertGuard)
+@Get('expertises/accepted-without-report')
+async getAcceptedExpertisesWithoutReport(@Req() request: any) {
+  const payload = request.user;
+  const expertId = payload.sub;
+
+  try {
+    return this.expertService.getAcceptedExpertisesWithoutReport(expertId);
+  } catch (error) {
+    throw new NotFoundException(error.message);
+  }
+}
+
   @UseGuards(ExpertGuard)
   @Get('rapports')
   async getRapports(@Req() request: any) {
