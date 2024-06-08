@@ -278,7 +278,18 @@ async refuserDemande(@Param('id') id: number) {
  async getAllExpertRequests(): Promise<ExpertRequest[]> {
    return this.adminService.getAllExpertRequests();
  }
-
+ @UseGuards(AdminGuard)
+ @Get('expert-requests/pending')
+ async getPendingExpertRequests(@Req() request: any) {
+   const payload = request.user;
+   const adminId = payload.sub;
+ 
+   try {
+     return this.adminService.getPendingExpertRequests(adminId);
+   } catch (error) {
+     throw new NotFoundException(error.message);
+   }
+ }
  
   @UseGuards(AdminGuard)
   @Get('getPubs/:pubid')

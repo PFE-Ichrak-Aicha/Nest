@@ -42,13 +42,16 @@ export class AdminService {
   async getUsers(): Promise<Partial<User>[]> {
     const users = await this.prismaService.user.findMany({
       select: {
+        id : true,
         Nom: true,
+        createdAt : true,
         Prenom: true,
         email: true,
         Adresse: true,
         Ville: true,
         CodePostal: true,
         PhotoProfil: true,
+        NumTel : true,
       },
     });
     return users;
@@ -490,7 +493,23 @@ export class AdminService {
   async getAllExpertRequests(): Promise<ExpertRequest[]> {
     return this.prismaService.expertRequest.findMany();
   }
-
+  async getPendingExpertRequests(adminId: number): Promise<ExpertRequest[]> {
+    const pendingExpertRequests = await this.prismaService.expertRequest.findMany({
+      where: {
+        adminId: adminId,
+        status: 'en attente'
+      },
+      include: {
+        admin: true
+      }
+    });
+  
+    if (pendingExpertRequests.length === 0) {
+      throw new Error('Aucune demande d\'expert en attente trouvée.');
+    }
+  
+    return pendingExpertRequests;
+  }
   async getExpertRequestById(ider: any): Promise<ExpertRequest> {
     let id = parseInt(ider, 10);
     return this.prismaService.expertRequest.findUnique({
