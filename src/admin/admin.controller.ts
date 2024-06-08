@@ -1,4 +1,4 @@
-import { Controller, InternalServerErrorException, Param, ParseIntPipe, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, InternalServerErrorException, Param, ParseIntPipe, Patch, Request, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { AdminGuard } from 'src/auth/admin.guard';
 import { AdminService } from './admin.service';
 import { Body, Req, UseGuards, Delete, Put, Post, Get, Query, BadRequestException } from '@nestjs/common';
@@ -163,7 +163,7 @@ export class AdminController {
  }
 
 
- @UseGuards(AdminGuard)
+ //@UseGuards(AdminGuard)
  @Get('experts')
  async getAllExperts(): Promise<Expert[]> {
    return this.adminService.getAllExperts();
@@ -375,6 +375,40 @@ async getCV(@Param('filename') filename: string, @Res() res: Response) {
     }
   });
 }
+
+@UseGuards(AdminGuard)
+@Post('block-user/:id')
+async blockUser(@Param('id',ParseIntPipe) id: number, @Req() req: Request, @Res() res: Response): Promise<void> {
+  await this.adminService.blockUser(id);
+  res.status(200).json({ message: 'User blocked successfully' });
+  return;
+}
+
+@Patch("unblock/:id")
+async unblockUser(@Param("id",ParseIntPipe) id: number, @Req() req: Request, @Res() res: Response) {
+  await this.adminService.unblockUser(id);
+  res.status(200).json({message : 'User unblocked successfully'});
+  return;
+}
+
+@UseGuards(AdminGuard)
+@Post('block-expert/:id')
+async blockExpert(@Param('id',ParseIntPipe) id: number, @Req() req: Request, @Res() res: Response): Promise<void> {
+  await this.adminService.blockExpert(id);
+  res.status(200).json({ message: 'User blocked successfully' });
+  return;
+}
+
+@Patch("unblock-expert/:id")
+async unblockExpert(@Param("id",ParseIntPipe) id: number, @Req() req: Request, @Res() res: Response) {
+  await this.adminService.unblockExpert(id);
+  res.status(200).json({message : 'Expert unblocked successfully'});
+  return;
+}
+
+
+
+
 }
 
 

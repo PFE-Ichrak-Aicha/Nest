@@ -24,8 +24,16 @@ export class AuthController {
   }
   
   @Post("connexion")
-  connexion(@Body() connexionDto: connexionDto, @Req() req: Request) {
-    return this.authService.connexion(connexionDto, req)
+  async connexion(@Body() connexionDto: connexionDto, @Req() req: Request, @Res() res: Response) {
+    try {
+      const { token, user } = await this.authService.connexion(connexionDto, req);
+      if (user.isBlocked) {
+        return res.status(403).json({ message: 'Your account is blocked.' });
+      }
+      return res.status(200).json({ token, user });
+    } catch (error) {
+      return res.status(error.status || 500).json({ message: error.message });
+    }
   }
 
   @Post("connexionAdmin")
@@ -35,8 +43,16 @@ export class AuthController {
 
   
   @Post("connexionExpert")
-  connexionExpert(@Body() connexionDto: connexionDto) {
-    return this.authService.connexionExpert(connexionDto)
+  async connexionExpert(@Body() connexionDto: connexionDto, @Req() req: Request, @Res() res: Response) {
+    try {
+      const { token, expert } = await this.authService.connexionExpert(connexionDto, req);
+      if (expert.isBlocked) {
+        return res.status(403).json({ message: 'Your account is blocked.' });
+      }
+      return res.status(200).json({ token, expert });
+    } catch (error) {
+      return res.status(error.status || 500).json({ message: error.message });
+    }
   }
 
   @Post('reset-pass-demand')

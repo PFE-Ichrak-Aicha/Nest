@@ -14,7 +14,6 @@ model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   Nom           String                @db.VarChar(80)
   Prenom        String                @db.VarChar(80)
   NumTel        String                @db.VarChar(8)
@@ -24,6 +23,7 @@ model User {
   Ville         String
   CodePostal    String?
   PhotoProfil   String?
+  isBlocked     Boolean               @default(false)
   //isAdmin      Boolean               @default(false)
   //MotDePasseConfirmation String        @db.VarChar(80)
   resetCode     String?
@@ -172,6 +172,7 @@ model Expert {
   cout        String
   PhotoProfil String?
   isExpert    Boolean @default(true)
+  isBlocked     Boolean               @default(false)
 
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
@@ -193,7 +194,7 @@ model DemandExpertise {
   expert      Expert          @relation(fields: [expertId], references: [ide])
   rapport     Rapport?
   rapportId   Int?            @unique
-
+ paye     Boolean  @default(false)
   @@unique([expertId, userId, pubId])
 }
 

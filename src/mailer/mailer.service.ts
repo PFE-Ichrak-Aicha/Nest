@@ -204,4 +204,53 @@ export class MailerService {
                    <p>Votre mot de passe: ${userPassword}</p>`,
     });
   }
+//jdidd
+  async sendPaymentSuccessEmail(
+    userEmail: string,
+    publicationTitle: string,
+    paymentAmount: number
+  ): Promise<void> {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: userEmail,
+      subject: "Paiement réussi pour votre publication",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #333; text-align: center;">Paiement réussi</h1>
+          <p style="color: #666; font-size: 16px;">Bonjour,</p>
+          <p style="color: #666; font-size: 16px;">Nous vous confirmons que le paiement de <strong>${paymentAmount} DT</strong> pour votre publication "<strong>${publicationTitle}</strong>" a été effectué avec succès.</p>
+          <p style="color: #666; font-size: 16px;">Vous pouvez désormais accéder à votre espace personnel pour gérer votre publication.</p>
+          <p style="color: #666; font-size: 16px;">Merci pour votre confiance.</p>
+          <p style="color: #666; font-size: 16px;">L'équipe de notre service.</p>
+        </div>
+      `
+    });
+  }
+  async sendPaymentSuccessEmailExpert(
+    expertEmail: string,
+    paymentAmount: number,
+    marque: string,
+    model: string,
+    clientFirstName: string,
+    clientLastName: string
+  ): Promise<void> {
+    const transport = await this.transporter();
+    await transport.sendMail({
+      from: 'yahyaouiad28@gmail.com',
+      to: expertEmail,
+      subject: "Paiement reçu pour expertise de véhicule",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #333; text-align: center;">Paiement reçu pour expertise de véhicule</h1>
+          <p style="color: #666; font-size: 16px;">Bonjour,</p>
+          <p style="color: #666; font-size: 16px;">Nous vous informons qu'un paiement de <strong>${paymentAmount} DT</strong> a été effectué pour l'expertise d'un véhicule de marque <strong>${marque}</strong> et de modèle <strong>${model}</strong>.</p>
+          <p style="color: #666; font-size: 16px;">Le paiement a été effectué par <strong>${clientFirstName} ${clientLastName}</strong>.</p>
+          <p style="color: #666; font-size: 16px;">Merci pour votre travail.</p>
+          <p style="color: #666; font-size: 16px;">Cordialement,</p>
+          <p style="color: #666; font-size: 16px;">Votre service.</p>
+        </div>
+      `
+    });
+  }
 }

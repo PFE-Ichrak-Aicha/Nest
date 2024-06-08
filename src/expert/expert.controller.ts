@@ -249,7 +249,11 @@ export class ExpertController {
     return notification;
   }
 
-
+//jdid  
+@Get('demande/:id')
+async getDemandExpertiseById(@Param('id') id: string): Promise<DemandExpertise> {
+  return this.expertService.getDemandExpertiseById(+id);
+}
   
 
 

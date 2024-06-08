@@ -15,6 +15,7 @@ import { UserJwtStrategy } from './user/user-jwt.strategy';
 import { ServeStaticModule } from '@nestjs/serve-static';
 //import { AdminJwtStrategy } from './admin-jwt.strategy';
 import { NotificationModule } from './notification/notification.module';
+import { StripeModule } from './stripe/stripe.module';
 @Module({
   imports: [AuthModule, PrismaModule, ConfigModule.forRoot({ isGlobal: true }), MailerModule, PassportModule, PubModule, UserModule,
     MulterModule.register({
@@ -26,7 +27,7 @@ import { NotificationModule } from './notification/notification.module';
       serveRoot: '/uploads', // URL à laquelle les fichiers seront accessibles
     }),
     AdminModule,
-    ExpertModule, JwtModule, NotificationModule],
+    ExpertModule, JwtModule, NotificationModule, StripeModule],
   providers: [AdminJwtStrategy, UserJwtStrategy]
 })
 export class AppModule { }

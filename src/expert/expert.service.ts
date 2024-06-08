@@ -507,9 +507,28 @@ export class ExpertService {
     }
   }
 
-// Expertise Service
+// jdidd
+async getExpertDetails(expertId: number) {
+  const expert = await this.prismaService.expertRequest.findUnique({
+    where: { ider: expertId },
+    select: { email: true, firstName: true, lastName: true, cout: true },
+  });
+  return expert;
+}
+async getDemandExpertiseById(id: number): Promise<DemandExpertise> {
+  const demandExpertise = await this.prismaService.demandExpertise.findUnique({
+    where: { idde: id }, // Assurez-vous que le champ est correct
+    include: {
+      publication: true,
+      expert : true
+    }
+  });
 
+  if (!demandExpertise) {
+    throw new NotFoundException(`DemandExpertise with ID ${id} not found`);
+  }
 
-
+  return demandExpertise;
+}
 
 }

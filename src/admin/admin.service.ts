@@ -712,14 +712,57 @@ export class AdminService {
       },
     });
   }*/
+  async blockUser(userId: number): Promise<void> {
+    await this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        isBlocked: true,
+      },
+    });
+  }
 
+  async unblockUser(userId: number): Promise<void> {
+    await this.prismaService.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        isBlocked: false,
+      },
+    });
+  }
 
+  async blockExpert(experId: number): Promise<void> {
+    await this.prismaService.expert.update({
+      where: {
+        ide: experId,
+      },
+      data: {
+        isBlocked: true,
+      },
+    });
+  }
 
-
-
-
-
-
-
-
+  async unblockExpert(experId: number): Promise<void> {
+    await this.prismaService.expert.update({
+      where: {
+        ide: experId,
+      },
+      data: {
+        isBlocked: false,
+      },
+    });
+  }
+  
 }
+
+
+
+
+
+
+
+
+

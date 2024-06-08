@@ -60,35 +60,40 @@ export class AuthService {
             //return { data: 'Utilisateur enregistré ' };
             return { message: "Utilisateur enregistré et connecté", user: newUser, token };
         }
-    async connexion(connexionDto: connexionDto,req: Request) {
-        const { email, MotDePasse } = connexionDto;
-        // Recherche de l'utilisateur dans la base de données
-        const user = await this.prismaService.user.findUnique({ where: { email } });
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
-        // Vérification du mot de passe
-        const match = await bcrypt.compare(MotDePasse, user.MotDePasse);
-        if (!match) {
-            throw new ForbiddenException("Incorrect password");
-        }
-        // Génération du token JWT
-        const payload = {
-            sub: user.id,
-            email: user.email,
-    
-        };
-        const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
-        // Retour de la réponse avec le token JWT et les informations de l'utilisateur
-        req.user = { id: user.id, email: user.email };
-        return {
-            token,
-            user: {
-                id: user.id, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
-                email: user.email
-            }
-        };
+async connexion(connexionDto: connexionDto, req: Request): Promise<{ token: string; user: { id: number; email: string; isBlocked: boolean; }; }> {
+  const { email, MotDePasse } = connexionDto;
+  // Recherche de l'utilisateur dans la base de données
+  const user = await this.prismaService.user.findUnique({ where: { email } });
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+   // Check if the user is blocked
+   if (user.isBlocked) {
+    throw new ForbiddenException("Your account is blocked.");
+  }
+  // Vérification du mot de passe
+  const match = await bcrypt.compare(MotDePasse, user.MotDePasse);
+  if (!match) {
+    throw new ForbiddenException("Incorrect password");
+  }
+ 
+  // Génération du token JWT
+  const payload = {
+    sub: user.id,
+    email: user.email,
+  };
+  const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
+  // Retour de la réponse avec le token JWT et les informations de l'utilisateur
+  req.user = { id: user.id, email: user.email, isBlocked: user.isBlocked };
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      isBlocked: user.isBlocked
     }
+  };
+}
     async connexionAdmin(connexionDto: connexionDto) {
         const { email, MotDePasse } = connexionDto;
         // Recherche de l'utilisateur dans la base de données
@@ -121,12 +126,15 @@ export class AuthService {
             }
         };
     }
-    async connexionExpert(connexionDto: connexionDto) {
+    async connexionExpert(connexionDto: connexionDto, req: Request): Promise<{ token: string; expert: { ide: number; email: string; isBlocked: boolean; }; }> {
         const { email, MotDePasse } = connexionDto;
         // Recherche de l'utilisateur dans la base de données
         const expert = await this.prismaService.expert.findUnique({ where: { email} });
         if (!expert || !expert.isExpert) { // Vérifier si l'utilisateur est administrateur
             throw new ForbiddenException('Only experts can access this endpoint');
+          }
+          if (expert.isBlocked) {
+            throw new UnauthorizedException('Your account is blocked.');
           }
         // Vérification du mot de passe
         const match = await bcrypt.compare(MotDePasse, expert.passe);
@@ -145,11 +153,13 @@ export class AuthService {
         const token = this.JwtService.sign(payload, { expiresIn: "2h", secret: this.configService.get('SECRET_KEY') });
 
         // Retour de la réponse avec le token JWT et les informations de l'utilisateur
+        req.user = { id: expert.ide, email: expert.email };
         return {
             token,
             expert: {
                 ide: expert.ide, // Assurez-vous que l'identifiant de l'utilisateur est inclus dans la réponse
-                email: expert.email
+                email: expert.email,
+                isBlocked : expert.isBlocked
             }
         };
     }

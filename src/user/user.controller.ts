@@ -25,7 +25,7 @@ import { Observable, from, map, of } from 'rxjs';
 import * as multer from 'multer';
 import { UserWithoutPassword } from './user.service';
 import { UserGuard } from './user.guard';
-import { Notification } from '@prisma/client';
+import { Notification , User } from '@prisma/client';
 import { InscriptionDto } from 'dto/inscriptionDto';
 import { DemandeDto } from 'dto/demandeDto';
 
@@ -120,11 +120,11 @@ export class UserController {
   }
 
 
-  @Post('demande-creation-compte')
+  /*@Post('demande-creation-compte')
 async demandeCreationCompte(@Body() demandeDto:DemandeDto,  @Req() req: any) {
   const client: Socket = req
   return this.userService.demandeCreationCompte(demandeDto,client);
-}
+}*/
 
   @UseGuards(UseGuards)
   @Patch('notifications/:notificationId')
@@ -164,5 +164,14 @@ async demandeCreationCompte(@Body() demandeDto:DemandeDto,  @Req() req: any) {
     const userId = payload && payload.sub ? payload.sub : null;
     return this.userService.getUserById(userId);
   }
-  
+  //jdidd
+  @Get('demande/:id')
+  async getUserDemandes(@Param('id') id: number) {
+    const demandes = await this.userService.getUserDemandes(Number(id));
+    return demandes;
+  }
+  @Get(':id/u')
+  async getUserById1(@Param('id', ParseIntPipe) id: number): Promise<User> {
+    return this.userService.getUById(id);
+  }
 }

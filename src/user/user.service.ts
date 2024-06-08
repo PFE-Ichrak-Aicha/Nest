@@ -305,4 +305,79 @@ async getNotificationsByUserId(userId: number): Promise<Notification[]> {
       throw new Error(error);
     }
   }
+
+  //jdidd
+  async getEmailById(userId: string): Promise<string | null> {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id: parseInt(userId),
+      },
+      select: {
+        email: true,
+      },
+    });
+
+    return user?.email || null;
+  }
+  async getUById(id: number): Promise<User> {
+    const user = await this.prismaService.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
+
+  async getUserDemandes(userId: number) {
+    const userWithDemandes = await this.prismaService.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        expertises: {
+          include: {
+            publication: true, 
+
+            expert: {
+              select: {
+                firstName: true,
+                lastName: true,
+                cout: true
+              }
+            }
+          },
+        },
+      },
+    });
+  
+    if (!userWithDemandes) {
+      return [];
+    }
+    const transformedDemandes = userWithDemandes.expertises.map(demande => ({
+      idde: demande.idde,
+      createdAt: demande.createdAt,
+      status: demande.status,
+      userId: demande.userId,
+      paye: demande.paye,
+      pubId: demande.pubId,
+      expertId: demande.expertId,
+      marque: demande.publication.marque,
+      model: demande.publication.model,
+      expert: {
+        firstName: demande.expert.firstName,
+        lastName: demande.expert.lastName,
+        cout: demande.expert.cout
+      }
+    }));
+  
+    return transformedDemandes;
+  }
+
+  async getUById1(id: number): Promise<User> {
+    const user = await this.prismaService.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
+ 
 }
