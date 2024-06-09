@@ -257,13 +257,13 @@ export class ExpertService {
       where: { idde: expertiseId, status: 'ACCEPTE' },
       include: { expert: true, publication: true, user: true },
     });
-
+  
     if (!expertise || expertise.expert.ide !== expertId) {
       throw new Error(
         "Vous n'êtes pas autorisé à créer un rapport pour cette expertise.",
       );
     }
-
+  
     // Créer le rapport pour l'expertise acceptée
     const newRapport = await this.prismaService.rapport.create({
       data: {
@@ -297,19 +297,14 @@ export class ExpertService {
         commentaire_exp: rapportData.commentaire_exp,
       },
     });
-    //const notificationContent = {
-     // title: 'Nouveau rapport d\'expertise disponible',
-     // data: {
-     //   userId: expertise.userId,
-     // },
-    //};
-   /* const notificationContent = {
-      title: 'Nouveau rapport d\'expertise disponible',
+  
+    // Mettre à jour l'expertise avec l'ID du rapport
+    await this.prismaService.demandExpertise.update({
+      where: { idde: expertiseId },
       data: {
-        userId: expertise.userId,
+        rapportId: newRapport.idr,
       },
-    };
-    await this.notificationService.notifierUtilisateurRapport(notificationContent, client);*/
+    });
   
     return newRapport;
   }
