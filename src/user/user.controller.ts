@@ -120,11 +120,11 @@ export class UserController {
   }
 
 
-  /*@Post('demande-creation-compte')
+  @Post('demande-creation-compte')
 async demandeCreationCompte(@Body() demandeDto:DemandeDto,  @Req() req: any) {
   const client: Socket = req
   return this.userService.demandeCreationCompte(demandeDto,client);
-}*/
+}
 
   @UseGuards(UseGuards)
   @Patch('notifications/:notificationId')

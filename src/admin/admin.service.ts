@@ -792,7 +792,13 @@ export class AdminService {
     });
     return blockedExperts;
   }
-
+  async deleteM(id: number): Promise<void> {
+    await this.prismaService.creationCompteRequest.delete({
+      where: {
+        id,
+      },
+    });
+  }
 
 
   

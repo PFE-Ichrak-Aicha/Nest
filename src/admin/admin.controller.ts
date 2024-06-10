@@ -202,6 +202,13 @@ export class AdminController {
    }
    return this.pubService.deleteWithImages(pubid, userId);
  }
+
+
+ @UseGuards(AdminGuard)
+ @Delete('message/:id')
+ async deleteCreationCompteRequest(@Param('id', ParseIntPipe) id: number) {
+   return this.adminService.deleteM(id);
+ }
  @UseGuards(AdminGuard)
  @Post('upload')
  @UseInterceptors(FileInterceptor('file', adstorage))
